@@ -70,3 +70,8 @@
     1. Le code doit compiler sans erreur.
     2. Le test JUnit associé doit passer au vert.
     3. Un autre membre doit tester la saisie clavier pour vérifier que le programme ne crash pas avec une valeur aberrante.
+ 
+## UML
+
+![[UML_SAE_dev.png]]
+
