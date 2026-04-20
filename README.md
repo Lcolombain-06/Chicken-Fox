@@ -49,6 +49,8 @@
 
 ### 2. Standards de Code & Documentation
 
+- **Suivre l'exemple du prof sur cours-info et utiliser les fonction déjà faite etc...**
+
 - **Langue :** 100% Anglais (nom des variables, méthodes, classes, commentaires et affichage console) et vérifier la syntaxe pour qu'on évite d'avoir une journée correction des commentaires sur 30 milliard de fichiers.
     
 - **Auto-Documentation :** Chaque fonction doit avoir une Javadoc succincte expliquant :
