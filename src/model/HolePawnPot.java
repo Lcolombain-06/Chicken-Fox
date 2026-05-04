@@ -1,3 +1,5 @@
+// We probably have to remove this Class, since the game don't need a pot
+
 package model;
 
 import boardifier.model.GameStageModel;

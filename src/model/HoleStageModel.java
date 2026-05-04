@@ -34,7 +34,7 @@ public class HoleStageModel extends GameStageModel {
     private int redPawnsToPlay;
 
     // define stage game elements
-    private HoleBoard board;
+    private Board board;
     private HolePawnPot blackPot;
     private HolePawnPot redPot;
     private Pawn[] blackPawns;
@@ -50,7 +50,7 @@ public class HoleStageModel extends GameStageModel {
         setupCallbacks();
     }
 
-    public HoleBoard getBoard() {
+    public Board getBoard() {
         return board;
     }
 

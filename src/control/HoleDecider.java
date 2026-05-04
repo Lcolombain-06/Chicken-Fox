@@ -6,7 +6,7 @@ import boardifier.control.Decider;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import model.HoleBoard;
+import model.Board;
 import model.HolePawnPot;
 import model.HoleStageModel;
 import model.Pawn;
