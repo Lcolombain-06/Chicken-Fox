@@ -32,6 +32,39 @@ public class HoleStageFactory extends StageElementsFactory {
     @Override
     public void setup() {
 
+        Board board = new Board (0,0, stageModel);
+        stageModel.setBoard(board);
+
+        Pawn[] chikens = new Pawn[13];
+
+        for (int i = 0; i < 13; i++) {
+            chikens[i] = new Pawn (i, Pawn.PAWN_BLACK, stageModel);
+        }
+        stageModel.setChickens(chikens);
+
+        Pawn[] fox = new Pawn[1];
+        fox[0] = new Pawn (0, Pawn.PAWN_RED, stageModel);
+        stageModel.setFox(fox);
+
+        int i = 0;
+
+        for (int col = 2; col <= 4; col++) {
+            stageModel.putInContainer(chikens[i], board, 0, col);
+            i++;
+        }
+
+        for (int col = 2; col <= 4; col++) {
+            stageModel.putInContainer(chikens[i], board, 1, col);
+            i++;
+        }
+
+        for (int col = 0; col <= 6; col++) {
+            stageModel.putInContainer (chikens[i], board, 2, col);
+            i++;
+        }
+
+        stageModel.putInContainer(fox[0], board, 6, 3);
+
         /*
         TO FULFILL:
             - create the board, pots, pawns and set them in the stage model

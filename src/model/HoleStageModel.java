@@ -147,6 +147,25 @@ public class HoleStageModel extends GameStageModel {
         model.stopStage();
     }
 
+    public void setBoard(Board board) {
+        this.board = board;
+        addContainer(board);
+    }
+
+    public void setChickens (Pawn[] chickens) {
+        this.blackPawns = chickens;
+        for (Pawn p : chickens) {
+            addElement(p);
+        }
+    }
+
+    public void setFox(Pawn[] fox){
+        this.redPawns = fox;
+        for (Pawn p : fox) {
+            addElement(p);
+        }
+    }
+
     @Override
     public StageElementsFactory getDefaultElementFactory() {
         return new HoleStageFactory(this);
