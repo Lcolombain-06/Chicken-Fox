@@ -30,10 +30,15 @@ public class Board extends ContainerElement {
         return this.cells[x][y];
     }
 
-    public void setValidCells(int number) {
+    public void setValidCells(Pawn pawn) {
         resetReachableCells(false);
+        int[] pos = getElementCell(pawn);  // méthode héritée de ContainerElement
+        if (pos == null) return;
+        int row = pos[0];
+        int col = pos[1];
+
         List<Point> valid;
-        if (color == Pawn.PAWN_BLACK){
+        if (pawn.getColor() == Pawn.PAWN_BLACK) {
             valid = computeValidCellsChicken(row, col);
         } else {
             valid = computeValidCellsFox(row, col);
@@ -67,7 +72,6 @@ public class Board extends ContainerElement {
             // ccondition pour eviter les sortie de plateau.
             if (newRow < 0 || newRow >= 7 || newCol < 0 || newCol >= 7) continue;
 
-            Cell dest = cells[newRow][newCol];
 
             // Si la case est accesible. Donc correspond a un voisin
             if (!dest.isAccessible()) continue;
@@ -88,7 +92,7 @@ public class Board extends ContainerElement {
 
     // initialise the board with all corner remove (to form the "plus" shape).
     private void initBoard() {
-        cases = new Case[7][7];
+        cells = new Cell[7][7];
 
         for(int y = 0; y < 7; y++) {
             for(int x = 0; x < 7; x++) {
@@ -100,7 +104,7 @@ public class Board extends ContainerElement {
                     accessible = false;
                 }
 
-                cases[y][x] = new Case(x, y, accessible);
+                cells[y][x] = new Cell(x, y, accessible);
             }
         }
 
@@ -111,7 +115,7 @@ public class Board extends ContainerElement {
         int[][] orthogonal = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
         int[][] diagonal = {{-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
 
-        for(int y = 0; y < 7 ) {
+        for(int y = 0; y < 7 , y++) {
             for (int x = 0; x < 7; x++) {
                 Cell c = cells[y][x];
 
@@ -121,7 +125,8 @@ public class Board extends ContainerElement {
                 for (int[] d : orthogonal) {
                     int nx = x + d[0];
                     int ny = y + d[1];
-
+                    //ajout verification des limites
+                    if (nx < 0 || ny < 0 || nx >= 7 || ny >= 7) continue;
                     if(cells[ny][nx].isAccessible()) {
                         c.addNeighbor(cells[ny][nx]);
                     }

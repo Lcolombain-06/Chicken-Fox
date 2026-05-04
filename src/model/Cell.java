@@ -1,12 +1,13 @@
+package model;
+
+import model.Pawn;
 import java.util.ArrayList;
 
 public class Cell {
     private int x;
     private int y;
-    private boolean accessible:
-    private ArrayList<Case> neighbors;
-    private Pawn pawn;
-    private boolean empty;
+    private boolean accessible;
+    private ArrayList<Cell> neighbors;
 
     public Cell (int x, int y, boolean accessible) {
         this.x = x;
@@ -20,7 +21,7 @@ public class Cell {
         return this.x;
     }
 
-    public int getX() {
+    public int getY() {
         return this.y;
     }
 
@@ -31,32 +32,22 @@ public class Cell {
 
     // method to change accesibility of the cell (for those in the corner of the grid, or if a pawn is on it).
     public void setAccessible(boolean accessible) {
+
         this.accessible = accessible;
+
     }
 
     // return the list of accessible case from this one.
-    public ArrayList<Case> getNeighbors() {
+    public ArrayList<Cell> getNeighbors() {
         return this.neighbors;
     }
 
     public void addNeighbors(Cell c) {
-        this.neighbors.add(c);
-    }
-
-
-    public boolean isOccupied(){
-        return this.pawn != null;
-    }
-
-    public Pawn getPawn() {
-        return this.getPawn;
-    }
-
-    public void setPawn(Pawn pawn) {
-        this.pawn = pawn;
+        this.neighbor.add(c);
     }
 
 }
 
 
     // Faire les fonctions ;  isAccesible, isOccupied, isEmpty
+    // Ajout une methode avec posReverse();
