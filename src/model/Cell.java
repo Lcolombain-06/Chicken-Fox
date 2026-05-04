@@ -5,6 +5,7 @@ public class Cell {
     private int y;
     private boolean accessible:
     private ArrayList<Case> neighbors;
+    private Pawn pawn;
 
     public Cell (int x, int y, boolean accessible) {
         this.x = x;
@@ -41,3 +42,17 @@ public class Cell {
         this.neighbors.add(c);
     }
 }
+
+
+
+    public boolean isOccupied(){
+        return this.pawn != null;
+    }
+
+    public Pawn getPawn() {
+        return this.getPawn;
+    }
+
+    public void setPawn(Pawn pawn) {
+        this.pawn = pawn;
+    }
