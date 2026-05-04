@@ -41,14 +41,15 @@ public class Board extends ContainerElement {
         for (Point p : valid) {
             reachableCells[p.y][p.x] = true;
         }
-
-
     }
+
 
     // MVT POULE
     public List<Point> computeValidCellsChicken(int row, int col) {
         List<Point> valid = new ArrayList<>();
 
+
+        //demandé si correspond bien au, bon move
         int[][] chickenDeltas = {
                 {0, -1},   // gauche
                 {0, +1},   // droite
@@ -57,16 +58,20 @@ public class Board extends ContainerElement {
                 {+1, +1},  // bas-droite
         };
 
+        Cell src = cells[row][col];
+
         for (int[] delta : chickenDeltas) {
             int newRow = row + delta[0];
             int newCol = col + delta[1];
 
+            // ccondition pour eviter les sortie de plateau.
             if (newRow < 0 || newRow >= 7 || newCol < 0 || newCol >= 7) continue;
 
             Cell dest = cells[newRow][newCol];
 
-            // la case doit être accessible sur le plateau ET libre (pas de pion dessus)
+            // Si la case est accesible. Donc correspond a un voisin
             if (!dest.isAccessible()) continue;
+            // Verifie que sur la case il n'y a pas d'autre pion
             if (!isEmptyAt(newRow, newCol)) continue;
 
             // vérifier que c'est bien un voisin déclaré (respecte la forme du plateau)
@@ -74,25 +79,6 @@ public class Board extends ContainerElement {
             if (src.getNeighbors().contains(dest)) {
                 valid.add(new Point(newCol, newRow));
             }
-        }
-
-        return valid;
-    }
-
-    public List<Point> computeValidCellsFox(int row, int col) {
-        List<Point> valid = new ArrayList<>();
-
-        Cell src = cells[row][col];
-
-        // on utilise directement les voisins calculés dans initNeighbors()
-        for (Cell neighbor : src.getNeighbors()) {
-            int nRow = neighbor.getY();
-            int nCol = neighbor.getX();
-
-            if (!neighbor.isAccessible()) continue;
-            if (!isEmptyAt(nRow, nCol)) continue;
-
-            valid.add(new Point(nCol, nRow));
         }
 
         return valid;
