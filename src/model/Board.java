@@ -32,32 +32,72 @@ public class Board extends ContainerElement {
 
     public void setValidCells(int number) {
         resetReachableCells(false);
-        List<Point> valid = computeValidCells(number);
-        if (valid != null) {
-            for(Point p : valid) {
-                reachableCells[p.y][p.x] = true;
-            }
+        List<Point> valid;
+        if (color == Pawn.PAWN_BLACK){
+            valid = computeValidCellsChicken(row, col);
+        } else {
+            valid = computeValidCellsFox(row, col);
         }
-    }
-
-    // For now, determine all the accesible cell of the board.
-    public List<Point> computeValidCells(int number) {
-        List<Point> lst = new ArrayList<>();
-
-        for(int y = 0; y < 7; y++) {
-            for(int x = 0; x < 7; x++) {
-
-                Cell c = cells[y][x];
-
-                if (!c.isAccessible()) continue;
-
-                // all accesible cells (using the boolean value of the Cell class)
-                lst.add(new Point(x, y));
-            }
+        for (Point p : valid) {
+            reachableCells[p.y][p.x] = true;
         }
 
-        return lst;
+
     }
+
+    // MVT POULE
+    public List<Point> computeValidCellsChicken(int row, int col) {
+        List<Point> valid = new ArrayList<>();
+
+        int[][] chickenDeltas = {
+                {0, -1},   // gauche
+                {0, +1},   // droite
+                {+1, 0},   // bas
+                {+1, -1},  // bas-gauche
+                {+1, +1},  // bas-droite
+        };
+
+        for (int[] delta : chickenDeltas) {
+            int newRow = row + delta[0];
+            int newCol = col + delta[1];
+
+            if (newRow < 0 || newRow >= 7 || newCol < 0 || newCol >= 7) continue;
+
+            Cell dest = cells[newRow][newCol];
+
+            // la case doit être accessible sur le plateau ET libre (pas de pion dessus)
+            if (!dest.isAccessible()) continue;
+            if (!isEmptyAt(newRow, newCol)) continue;
+
+            // vérifier que c'est bien un voisin déclaré (respecte la forme du plateau)
+            Cell src = cells[row][col];
+            if (src.getNeighbors().contains(dest)) {
+                valid.add(new Point(newCol, newRow));
+            }
+        }
+
+        return valid;
+    }
+
+    public List<Point> computeValidCellsFox(int row, int col) {
+        List<Point> valid = new ArrayList<>();
+
+        Cell src = cells[row][col];
+
+        // on utilise directement les voisins calculés dans initNeighbors()
+        for (Cell neighbor : src.getNeighbors()) {
+            int nRow = neighbor.getY();
+            int nCol = neighbor.getX();
+
+            if (!neighbor.isAccessible()) continue;
+            if (!isEmptyAt(nRow, nCol)) continue;
+
+            valid.add(new Point(nCol, nRow));
+        }
+
+        return valid;
+    }
+
 
 
     // initialise the board with all corner remove (to form the "plus" shape).
