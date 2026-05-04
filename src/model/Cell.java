@@ -49,5 +49,4 @@ public class Cell {
 }
 
 
-    // Faire les fonctions ;  isAccesible, isOccupied, isEmpty
-    // Ajout une methode avec posReverse();
+    // Ajout une methode avec posReverse(); a voir
