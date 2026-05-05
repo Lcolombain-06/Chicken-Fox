@@ -30,39 +30,69 @@ public class Board extends ContainerElement {
         return this.cells[x][y];
     }
 
-    public void setValidCells(int number) {
+    public void setValidCells(Pawn pawn) {
         resetReachableCells(false);
-        List<Point> valid = computeValidCells(number);
-        if (valid != null) {
-            for(Point p : valid) {
-                reachableCells[p.y][p.x] = true;
-            }
+        int[] pos = getElementCell(pawn);  // méthode héritée de ContainerElement
+        if (pos == null) return;
+        int row = pos[0];
+        int col = pos[1];
+
+        List<Point> valid;
+        if (pawn.getColor() == Pawn.PAWN_BLACK) {
+            valid = computeValidCellsChicken(row, col);
+        } else {
+            valid = computeValidCellsFox(row, col);
+        }
+        for (Point p : valid) {
+            reachableCells[p.y][p.x] = true;
         }
     }
 
-    // For now, determine all the accesible cell of the board.
-    public List<Point> computeValidCells(int number) {
-        List<Point> lst = new ArrayList<>();
 
-        for(int y = 0; y < 7; y++) {
-            for(int x = 0; x < 7; x++) {
+    // MVT POULE
+    public List<Point> computeValidCellsChicken(int row, int col) {
+        List<Point> valid = new ArrayList<>();
 
-                Cell c = cells[y][x];
 
-                if (!c.isAccessible()) continue;
+        //demandé si correspond bien au, bon move
+        int[][] chickenDeltas = {
+                {0, -1},   // gauche
+                {0, +1},   // droite
+                {+1, 0},   // bas
+                {+1, -1},  // bas-gauche
+                {+1, +1},  // bas-droite
+        };
 
-                // all accesible cells (using the boolean value of the Cell class)
-                lst.add(new Point(x, y));
+        Cell src = cells[row][col];
+
+        for (int[] delta : chickenDeltas) {
+            int newRow = row + delta[0];
+            int newCol = col + delta[1];
+
+            // ccondition pour eviter les sortie de plateau.
+            if (newRow < 0 || newRow >= 7 || newCol < 0 || newCol >= 7) continue;
+
+
+            // Si la case est accesible. Donc correspond a un voisin
+            if (!dest.isAccessible()) continue;
+            // Verifie que sur la case il n'y a pas d'autre pion
+            if (!isEmptyAt(newRow, newCol)) continue;
+
+            // vérifier que c'est bien un voisin déclaré (respecte la forme du plateau)
+            Cell src = cells[row][col];
+            if (src.getNeighbors().contains(dest)) {
+                valid.add(new Point(newCol, newRow));
             }
         }
 
-        return lst;
+        return valid;
     }
+
 
 
     // initialise the board with all corner remove (to form the "plus" shape).
     private void initBoard() {
-        cases = new Case[7][7];
+        cells = new Cell[7][7];
 
         for(int y = 0; y < 7; y++) {
             for(int x = 0; x < 7; x++) {
@@ -74,7 +104,7 @@ public class Board extends ContainerElement {
                     accessible = false;
                 }
 
-                cases[y][x] = new Case(x, y, accessible);
+                cells[y][x] = new Cell(x, y, accessible);
             }
         }
 
@@ -85,7 +115,7 @@ public class Board extends ContainerElement {
         int[][] orthogonal = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
         int[][] diagonal = {{-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
 
-        for(int y = 0; y < 7 ) {
+        for(int y = 0; y < 7 , y++) {
             for (int x = 0; x < 7; x++) {
                 Cell c = cells[y][x];
 
@@ -95,7 +125,8 @@ public class Board extends ContainerElement {
                 for (int[] d : orthogonal) {
                     int nx = x + d[0];
                     int ny = y + d[1];
-
+                    //ajout verification des limites
+                    if (nx < 0 || ny < 0 || nx >= 7 || ny >= 7) continue;
                     if(cells[ny][nx].isAccessible()) {
                         c.addNeighbor(cells[ny][nx]);
                     }
