@@ -68,12 +68,21 @@ public class HoleController extends Controller {
     }
 
     public void endOfTurn() {
-
-        model.setNextPlayer();
-        // get the new player to display its name
-        Player p = model.getCurrentPlayer();
         HoleStageModel stageModel = (HoleStageModel) model.getGameStage();
-        stageModel.getPlayerName().setText(p.getName());
+        Board board = stageModel.getBoard();
+
+        // Appeler la logique de victoire que tu as mise dans Board
+        if (board.verifierVictoirePoules()) {
+            System.out.println("LES POULES ONT GAGNÉ !");
+            model.setEndStage(true); // Arrête la boucle du jeu
+        }
+
+        // Si le jeu continue, on passe au joueur suivant
+        if (!model.isEndStage()) {
+            model.setNextPlayer();
+            Player p = model.getCurrentPlayer();
+            stageModel.getPlayerName().setText(p.getName());[cite: 2]
+        }
     }
     private boolean analyseAndPlay(String line) {
         HoleStageModel gameStage = (HoleStageModel) model.getGameStage();

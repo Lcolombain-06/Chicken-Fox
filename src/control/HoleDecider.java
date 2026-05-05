@@ -63,4 +63,66 @@ public class HoleDecider extends Decider {
 
         return actions;
     }
+
+    public boolean verifierVictoirePoules() {
+        Cell cellRenard = trouverPositionRenard();
+        if (cellRenard == null) return false;
+
+        // On récupère les voisins déjà filtrés par initNeighbors()
+        for (Cell voisin : cellRenard.getNeighbors()) {
+
+
+            // Si une case voisine est vide, le renard peut bouger
+            if (voisin.isEmpty()) {
+                return false;
+            }
+
+
+            // Si le voisin est une poule, on regarde si le renard peut sauter par-dessus
+            if (voisin.hasPoule()) {
+                if (peutSauterParDessus(cellRenard, voisin)) {
+                    return false;
+                }
+            }
+        }
+
+
+        return true;
+    }
+
+    /**
+     * Calcule si un saut est possible au-dessus d'une poule.
+     */
+    private boolean peutSauterParDessus(Cell renard, Cell poule) {
+        // Calcul de la direction du saut
+        int dx = poule.getX() - renard.getX();
+        int dy = poule.getY() - renard.getY();
+
+        // Coordonnées de la case d'atterrissage
+        int cibleX = poule.getX() + dx;
+        int cibleY = poule.getY() + dy;
+
+        // Vérification des limites du tableau
+        if (cibleX >= 0 && cibleX < 7 && cibleY >= 0 && cibleY < 7) {
+            Cell cible = getCell(cibleX, cibleY);
+            return cible.isAccessible() && cible.isEmpty();
+        }
+
+        return false;
+    }
+
+    /**
+     * Parcourt le plateau pour localiser le renard.
+     */
+    private Cell trouverPositionRenard() {
+        for (int y = 0; y < 7; y++) {
+            for (int x = 0; x < 7; x++) {
+                Cell c = getCell(x, y);
+                if (c.isAccessible() && c.hasRenard()) {
+                    return c;
+                }
+            }
+        }
+        return null;
+    }
 }
