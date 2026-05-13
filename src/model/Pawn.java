@@ -22,6 +22,11 @@ public class Pawn extends GameElement {
             - register a new type of element for the pawns
             - initialize attributes
          */
+
+        ElementTypes.register("pawn", 50);
+        type = ElementTypes.getType("pawn");
+        this.number = number;
+        this.color = color;
     }
 
     public int getNumber() {
@@ -30,4 +35,7 @@ public class Pawn extends GameElement {
     public int getColor() {
         return color;
     }
+
+    // chaque sous-classe sait si elle est un renard ou pas
+    public boolean isFox() { return this.color == PAWN_RED; }
 }
