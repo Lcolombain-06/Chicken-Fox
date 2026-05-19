@@ -3,17 +3,18 @@ package control;
 import boardifier.control.ActionFactory;
 import boardifier.control.ActionPlayer;
 import boardifier.control.Controller;
-import boardifier.model.GameElement;
-import boardifier.model.ContainerElement;
-import boardifier.model.Model;
-import boardifier.model.Player;
+import boardifier.model.*;
 import boardifier.model.action.ActionList;
+import boardifier.view.ContainerLook;
+import boardifier.view.ElementLook;
 import boardifier.view.View;
+import model.Board;
 import model.HoleStageModel;
-
+import model.Pawn;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+
 
 public class HoleController extends Controller {
 
@@ -30,12 +31,27 @@ public class HoleController extends Controller {
      * It is pretty straight forward to write :
      */
     public void stageLoop() {
+        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
         consoleIn = new BufferedReader(new InputStreamReader(System.in));
         update();
         while(! model.isEndStage()) {
-            playTurn();
-            endOfTurn();
-            update();
+            int whoWon = partyWinned(gameStage.getFoxRow(), gameStage.getFoxCol());
+
+            if (whoWon == 1) {
+                System.out.println("Fox won!");
+                model.setIdWinner(0);
+                model.stopStage();
+            }
+
+            else if (whoWon == 2) {
+                model.setIdWinner(1);
+                model.stopStage();
+            }
+
+            else if (whoWon == 0) {
+                playTurn();
+                endOfTurn();
+            }
         }
         endGame();
     }
@@ -55,8 +71,9 @@ public class HoleController extends Controller {
                 System.out.print(p.getName()+ " > ");
                 try {
                     String line = consoleIn.readLine();
-                    if (line.length() == 3) {
+                    if (line.length() == 4) {
                         ok = analyseAndPlay(line);
+
                     }
                     if (!ok) {
                         System.out.println("incorrect instruction. retry !");
@@ -76,34 +93,110 @@ public class HoleController extends Controller {
         stageModel.getPlayerName().setText(p.getName());
     }
     private boolean analyseAndPlay(String line) {
+        //System.out.println("line reçue : '" + line + "' longueur : " + line.length());
         HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
-        // get the pawn value from the first char
-        int pawnIndex = (int) (line.charAt(0) - '1');
-        if ((pawnIndex<0)||(pawnIndex>3)) return false;
-        // get the ccords in the board
-        int col = (int) (line.charAt(1) - 'A');
-        int row = (int) (line.charAt(2) - '1');
-        // check coords validity
-        if ((row<0)||(row>2)) return false;
-        if ((col<0)||(col>2)) return false;
-        // check if the pawn is still in its pot
-        ContainerElement pot = null;
-        if (model.getIdPlayer() == 0) {
-            pot = gameStage.getBlackPot();
-        }
-        else {
-            pot = gameStage.getRedPot();
-        }
-        if (pot.isEmptyAt(pawnIndex,0)) return false;
-        GameElement pawn = pot.getElement(pawnIndex,0);
-        // compute valid cells for the chosen pawn
-        gameStage.getBoard().setValidCells(pawnIndex+1);
-        if (!gameStage.getBoard().canReachCell(row,col)) return false;
+        Board board = gameStage.getBoard();
 
-        ActionList actions = ActionFactory.generatePutInContainer(model, pawn, "holeboard", row, col);
-        actions.setDoEndOfTurn(true); // after playing this action list, it will be the end of turn for current player.
-        ActionPlayer play = new ActionPlayer(model, this, actions);
-        play.start();
+        if (line.equals("STOP")){
+            model.stopStage();
+            return true;
+        }
+        // Read the coordonates
+        int fromR = line.charAt(0) - 'A';
+        int fromC = line.charAt(1) - '1';
+        int toR   = line.charAt(2) - 'A';
+        int toC   = line.charAt(3) - '1';
+        //System.out.println("fromR=" + fromR + " fromC=" + fromC + " toR=" + toR + " toC=" + toC);
+
+        if (fromR < 0 || fromR >= 7 || fromC < 0 || fromC >= 7 ||
+                toR   < 0 || toR   >= 7 || toC   < 0 || toC   >= 7) {
+            System.out.println("These cells cannot be reached !");
+            return false;
+        }
+
+        // Find the real pawn
+        GameElement element = board.getFirstElement(fromR,fromC);
+
+
+        if (element == null) {
+            System.out.println("There is no pawn here !");
+            return false;
+        }
+        Pawn pawn = (Pawn) element;
+
+        // 4. Vérifier que le pion appartient au joueur courant
+        int currentPlayer = model.getIdPlayer();
+        if (currentPlayer == 0 && !pawn.isFox()) {
+            System.out.println("It's the fox turn");
+            return false;
+        }
+        if (currentPlayer == 1 && !pawn.isGoose()) {
+            System.out.println("Its Goose turn");
+            return false;
+        }
+
+        board.setValidCells(pawn, fromR, fromC);
+        if (!board.getReachableCells()[toR][toC]){
+            System.out.println("You can't move there !");
+            return false;
+        }
+
+        //update fox coordinates
+        if (currentPlayer == 0) {
+            gameStage.setFoxCoo(toR, toC);
+        }
+
+        ActionList actions = ActionFactory.generateMoveWithinContainer(model, pawn, toR, toC);
+
+        if (Math.abs(toC-fromC) == 2 || Math.abs(toR-fromR) == 2){
+            GameElement geeseToEat = board.getFirstElement((fromR+toR)/2, (fromC+toC)/2);
+            ActionList removeAction = ActionFactory.generateRemoveFromContainer(model, geeseToEat);
+            actions.addAll(removeAction);
+
+
+
+        }
+
+
+        actions.setDoEndOfTurn(false);
+        ActionPlayer player = new ActionPlayer(model, this, actions);
+
+        ContainerLook boardLook = (ContainerLook) getElementLook(board);
+        //System.out.println("boardLook = " + boardLook);
+        ElementLook pawnLook = getElementLook(pawn);
+        //System.out.println("pawnLook = " + pawnLook);
+
+        player.start();
+        update();
         return true;
+
     }
+
+    private int partyWinned (int row, int col) {
+        // 0 = no one | 1 = Fox | 2 = Geese
+        int whoWon = 0;
+
+        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
+        Board board = gameStage.getBoard();
+
+        //System.out.println("(" + row + "; " + col + ")");
+
+        if (gameStage.getGeeseToPlay() < 4) {
+            whoWon = 1;
+        }
+
+        else {
+            Pawn fox = (Pawn) board.getFirstElement(row, col);
+            int reachableCells = board.setValidCells(fox, row, col);
+            if (reachableCells == 0) {
+                whoWon = 2;
+            }
+
+            //System.out.println("reachableCells --> " + reachableCells);
+        }
+
+        return whoWon;
+    }
+
+
 }

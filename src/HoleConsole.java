@@ -1,33 +1,121 @@
-import boardifier.model.GameException;
+import boardifier.control.StageFactory;
+import boardifier.model.Model;
 import boardifier.view.View;
 import control.HoleController;
 
-import boardifier.control.StageFactory;
-import boardifier.model.Model;
+import java.util.Scanner;
 
 public class HoleConsole {
+    final static Scanner input = new Scanner(System.in);
+
 
     public static void main(String[] args) {
+        // 1. Modèle global
+        Model model = new Model();
 
-        int mode = 0;
-        if (args.length == 1) {
-            try {
-                mode = Integer.parseInt(args[0]);
-                if ((mode <0) || (mode>2)) mode = 0;
+        if (args.length >= 1 && args.length < 3) {
+            int nbrplayer = Integer.parseInt(args[0]);
+            int whoIsFox = 1;
+            if (args.length == 2) {
+                whoIsFox = Integer.parseInt(args[1]);
             }
-            catch(NumberFormatException e) {
-                mode = 0;
+
+            if (nbrplayer == 0) {
+                model.addComputerPlayer("Player1 (bot)");
+                model.addComputerPlayer("Player2 (bot)");
+            }
+
+            else if (nbrplayer == 1) {
+                if (whoIsFox == 1 || whoIsFox > 2) {
+                    model.addHumanPlayer("Player1");
+                    model.addComputerPlayer("Player2 (bot)");
+                }
+
+                else {
+                    model.addComputerPlayer("Player1 (bot)");
+                    model.addHumanPlayer("Player2");
+                }
+            }
+
+            else {
+                model.addHumanPlayer("Player1");
+                model.addHumanPlayer("Player2");
             }
         }
-        Model model = new Model();
-        /*
-        TO FULFILL:
-            - add both players to model taking mode value into account
-            - register the model and view class names (i.e model.HoleStageModel & view.HoleStageView
-            - create the controller
-            - set the name of the first stage to use when starting the game
-            - start the game
-            - start the stage loop.
-         */
+
+        else {
+            playerSelection(model);
+            System.out.println();
+        }
+
+
+        // 2. Enregistrement du stage
+        StageFactory.registerModelAndView("hole", "model.HoleStageModel", "view.HoleStageView");
+
+        // 3. Vue et contrôleur
+        View view = new View(model);
+        HoleController control = new HoleController(model, view);
+        control.setFirstStageName("hole");
+
+        // 4. Lancement du jeu
+        try {
+            control.startGame();   // initialise le stage + appelle la factory
+            control.stageLoop();   // boucle de jeu
+        } catch (Exception e) {
+            System.out.println("Erreur lors du lancement du jeu : " + e.getMessage());
+        }
+    }
+
+
+
+    private static void playerSelection (Model model) {
+        titlePrint();
+        System.out.println("\n");
+
+        System.out.println("Welcome in geese and fox!");
+        System.out.print("Select the number of human player: ");
+        int nbrplayer = input.nextInt();
+        System.out.println();
+
+        if (nbrplayer == 0) {
+            model.addComputerPlayer("Player1 (bot)");
+            model.addComputerPlayer("Player2 (bot)");
+
+            System.out.println("Bot-only mod selected!");
+        }
+
+        else if (nbrplayer == 1) {
+            System.out.println("Bot-human mod selected!");
+            System.out.print("Who will play the fox (1 = player; 2 = bot): ");
+            int whoIsFox = input.nextInt();
+            System.out.println();
+
+            if (whoIsFox == 1 || whoIsFox > 2) {
+                model.addHumanPlayer("Player1");
+                model.addComputerPlayer("Player2 (bot)");
+                System.out.println("Player will be the fox!");
+            }
+
+            else {
+                model.addComputerPlayer("Player1 (bot)");
+                model.addHumanPlayer("Player2");
+                System.out.println("bot will be the fox!");
+            }
+        }
+
+        else {
+            model.addHumanPlayer("Player1");
+            model.addHumanPlayer("Player2");
+            System.out.println("Human VS Human mode selected!");
+        }
+    }
+
+    private static void titlePrint() {
+        System.out.println("   ______  ________  ________   ______   ________    ____  _____  _    ________    ___   ____  ____  \n" +
+                " .' ___  ||_   __  ||_   __  |.' ____ \\ |_   __  |  |_   \\|_   _|| |  |_   __  | .'   `.|_  _||_  _| \n" +
+                "/ .'   \\_|  | |_ \\_|  | |_ \\_|| (___ \\_|  | |_ \\_|    |   \\ | |  \\_|    | |_ \\_|/  .-.  \\ \\ \\  / /   \n" +
+                "| |   ____  |  _| _   |  _| _  _.____`.   |  _| _     | |\\ \\| |         |  _|   | |   | |  > `' <    \n" +
+                "\\ `.___]  |_| |__/ | _| |__/ || \\____) | _| |__/ |   _| |_\\   |_       _| |_    \\  `-'  /_/ /'`\\ \\_  \n" +
+                " `._____.'|________||________| \\______.'|________|  |_____|\\____|     |_____|    `.___.'|____||____| \n");
     }
 }

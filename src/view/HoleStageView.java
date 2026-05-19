@@ -1,52 +1,62 @@
 package view;
 
-import boardifier.control.Logger;
+import boardifier.model.ContainerElement;
+import boardifier.model.GameElement;
 import boardifier.model.GameStageModel;
-import boardifier.view.ClassicBoardLook;
 import boardifier.view.ContainerLook;
+import boardifier.view.ElementLook;
 import boardifier.view.GameStageView;
-
 import boardifier.view.TextLook;
 import model.HoleStageModel;
-
-/**
- * HoleStageView has to create all the looks for all game elements created by the HoleStageFactory.
- * The desired UI is the following:
- * player            ╔═╗    ┏━━━┓
- *    A   B   C      ║1║    ┃ 1 ┃
- *  ╔═══╦═══╦═══╗    ╠═╣    ┣━━━┫
- * 1║   ║   ║   ║    ║2║    ┃ 2 ┃
- *  ╠═══╬═══╬═══╣    ╠═╣    ┣━━━┫
- * 2║   ║   ║   ║    ║3║    ┃ 3 ┃
- *  ╠═══╬═══╬═══╣    ╠═╣    ┣━━━┫
- * 3║   ║   ║   ║    ║4║    ┃ 4 ┃
- *  ╚═══╩═══╩═══╝    ╚═╝    ┗━━━┛
- *
- * The UI constraints are :
- *   - the main board has double-segments border, coordinates, and cells of size 2x4
- *   - the black pot has double-segments border, will cells that resize to match what is within (or not)
- *   - the red pot has simple-segment border, and cells have a fixed size of 2x4
- *
- *   main board can be instanciated directly as a ClassicBoardLook.
- *   black pot could be instanciated directly as a TableLook, but in this demo a BlackPotLook subclass is created (in case of we want to modifiy the look in some way)
- *   for red pot, a subclass RedPotLook of GridLook is used, in order to override the method that render the borders.
- */
+import model.Pawn;
 
 public class HoleStageView extends GameStageView {
+
     public HoleStageView(String name, GameStageModel gameStageModel) {
         super(name, gameStageModel);
     }
 
     @Override
     public void createLooks() {
-        HoleStageModel model = (HoleStageModel)gameStageModel;
 
+        HoleStageModel model = (HoleStageModel) gameStageModel;
+
+        addLook(new TextLook(model.getPlayerName()));
+
+
+
+        addLook(new BoardLook(model.getBoard()));
+
+        if (model.getGeese() != null) {
+            for (Pawn p : model.getGeese()) {
+                if (p != null) addLook(new PawnLook(p));
+            }
+        }
+
+        if (model.getFox() != null) {
+            for (Pawn p : model.getFox()) {
+                if (p != null) addLook(new PawnLook(p));
+            }
+        }
         /*
-        TO FULFILL:
-            using the model of the board, pots and pawns
-            - create & add the look of the main board using an instance of ClassicBoardLook, with cells of size 4x2
-            - create & add the look of the two pots using instances of PawnPotLook with cells of size 4x2
-            - crate & add the look of the 8 pawns
-         */
+        // DEBUG
+        ContainerLook boardLook = (ContainerLook) getElementLook(model.getBoard());
+        ContainerElement board = model.getBoard();
+
+        //System.out.println("Board size: " + board.getNbRows() + "x" + board.getNbCols());
+
+        for (int row = 0; row < board.getNbRows(); row++) {
+            for (int col = 0; col < board.getNbCols(); col++) {
+                GameElement el = board.getElement(row, col);
+                if (el != null) {
+                    //System.out.println("Found element at [" + row + "][" + col + "]: " + el);
+                    ElementLook elLook = getElementLook(el);
+                    //System.out.println("  → look: " + elLook);
+                    if (elLook != null) {
+                        boardLook.addInnerLook(elLook, row, col);
+                    }
+                }
+            }
+        }*/
     }
 }
