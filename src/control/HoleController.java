@@ -5,8 +5,6 @@ import boardifier.control.ActionPlayer;
 import boardifier.control.Controller;
 import boardifier.model.*;
 import boardifier.model.action.ActionList;
-import boardifier.view.ContainerLook;
-import boardifier.view.ElementLook;
 import boardifier.view.View;
 import model.Board;
 import model.HoleStageModel;
@@ -49,11 +47,36 @@ public class HoleController extends Controller {
             }
 
             else if (whoWon == 0) {
-                playTurn();
+                stageInnerLoop(gameStage);
                 endOfTurn();
             }
         }
         endGame();
+    }
+
+    // Inner stage loop for if the fox do multiple captures
+    private void stageInnerLoop(HoleStageModel gameStage) {
+        do {
+            playTurn();
+            if (gameStage.isFoxCaptured()) {
+                Board board = gameStage.getBoard();
+                Pawn fox = (Pawn) board.getFirstElement(gameStage.getFoxRow(), gameStage.getFoxCol());
+
+                if (!board.foxCanCapture(fox, gameStage.getFoxRow(), gameStage.getFoxCol())) {
+                    gameStage.setFoxCaptured(false);
+                    break;
+                }
+
+                System.out.print("Another capture is possible, do you want to do it (O/N): ");
+                try {
+                    String answer = consoleIn.readLine();
+                    if (!answer.equalsIgnoreCase("O")) {
+                        gameStage.setFoxCaptured(false);
+                        break;
+                    }
+                } catch (IOException e) {}
+            }
+        } while (gameStage.isFoxCaptured());
     }
 
     private void playTurn() {
@@ -71,7 +94,7 @@ public class HoleController extends Controller {
                 System.out.print(p.getName()+ " > ");
                 try {
                     String line = consoleIn.readLine();
-                    if (line.length() == 4) {
+                    if (line.length() == 4 || line.length() == 2) {
                         ok = analyseAndPlay(line);
 
                     }
@@ -84,6 +107,7 @@ public class HoleController extends Controller {
         }
     }
 
+    @Override
     public void endOfTurn() {
 
         model.setNextPlayer();
@@ -93,84 +117,128 @@ public class HoleController extends Controller {
         stageModel.getPlayerName().setText(p.getName());
     }
     private boolean analyseAndPlay(String line) {
-        //System.out.println("line reçue : '" + line + "' longueur : " + line.length());
-        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
-        Board board = gameStage.getBoard();
-
-        if (line.equals("STOP")){
+        if (line.equalsIgnoreCase("STOP")) {
             model.stopStage();
             return true;
         }
-        // Read the coordonates
-        int fromR = line.charAt(0) - 'A';
-        int fromC = line.charAt(1) - '1';
-        int toR   = line.charAt(2) - 'A';
-        int toC   = line.charAt(3) - '1';
-        //System.out.println("fromR=" + fromR + " fromC=" + fromC + " toR=" + toR + " toC=" + toC);
 
-        if (fromR < 0 || fromR >= 7 || fromC < 0 || fromC >= 7 ||
-                toR   < 0 || toR   >= 7 || toC   < 0 || toC   >= 7) {
-            System.out.println("These cells cannot be reached !");
-            return false;
-        }
-
-        // Find the real pawn
-        GameElement element = board.getFirstElement(fromR,fromC);
-
-
-        if (element == null) {
-            System.out.println("There is no pawn here !");
-            return false;
-        }
-        Pawn pawn = (Pawn) element;
-
-        // 4. Vérifier que le pion appartient au joueur courant
         int currentPlayer = model.getIdPlayer();
-        if (currentPlayer == 0 && !pawn.isFox()) {
-            System.out.println("It's the fox turn");
-            return false;
-        }
-        if (currentPlayer == 1 && !pawn.isGoose()) {
-            System.out.println("Its Goose turn");
-            return false;
-        }
 
-        board.setValidCells(pawn, fromR, fromC);
-        if (!board.getReachableCells()[toR][toC]){
-            System.out.println("You can't move there !");
-            return false;
-        }
-
-        //update fox coordinates
         if (currentPlayer == 0) {
-            gameStage.setFoxCoo(toR, toC);
+            // Fox : Only 2 characters needed (destination)
+            if (line.length() != 2) {
+                System.out.println("needed format : 2 characters (ex: C3)");
+                return false;
+            }
+            return foxPlay(line);
+
+        } else {
+            // Geese : 4 characters (start + end)
+            if (line.length() != 4) {
+                System.out.println("needed format : 4 characters (ex: E3D3)");
+                return false;
+            }
+            return geesePlay(line);
+        }
+    }
+
+    private boolean foxPlay(String line) {
+        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
+        Board board = gameStage.getBoard();
+        gameStage.setFoxCaptured(false);
+
+        // start is saved in the model
+        int fromR = gameStage.getFoxRow();
+        int fromC = gameStage.getFoxCol();
+
+        // destination set by the player
+        int toR = line.charAt(0) - 'A';
+        int toC = line.charAt(1) - '1';
+
+        if (toR < 0 || toR >= 7 || toC < 0 || toC >= 7) {
+            System.out.println("incorrect coordinates !");
+            return false;
         }
 
-        ActionList actions = ActionFactory.generateMoveWithinContainer(model, pawn, toR, toC);
+        GameElement element = board.getFirstElement(fromR, fromC);
+        if (element == null) {
+            System.out.println("Error : Fox unfound !");
+            return false;
+        }
+        Pawn fox = (Pawn) element;
 
-        if (Math.abs(toC-fromC) == 2 || Math.abs(toR-fromR) == 2){
-            GameElement geeseToEat = board.getFirstElement((fromR+toR)/2, (fromC+toC)/2);
+        board.setValidCells(fox, fromR, fromC);
+        if (!board.getReachableCells()[toR][toC]) {
+            System.out.println("impossible move !");
+            return false;
+        }
+
+        // update fox coordinates
+        gameStage.setFoxCoo(toR, toC);
+
+        ActionList actions = ActionFactory.generateMoveWithinContainer(model, fox, toR, toC);
+
+        // if a geese is taken
+        if (Math.abs(toC - fromC) == 2 || Math.abs(toR - fromR) == 2) {
+            GameElement geeseToEat = board.getFirstElement((fromR + toR) / 2, (fromC + toC) / 2);
             ActionList removeAction = ActionFactory.generateRemoveFromContainer(model, geeseToEat);
             actions.addAll(removeAction);
+            gameStage.eatGeese();
 
-
-
+            gameStage.setFoxCaptured(true); //flag update for multi-captures
         }
-
 
         actions.setDoEndOfTurn(false);
         ActionPlayer player = new ActionPlayer(model, this, actions);
-
-        ContainerLook boardLook = (ContainerLook) getElementLook(board);
-        //System.out.println("boardLook = " + boardLook);
-        ElementLook pawnLook = getElementLook(pawn);
-        //System.out.println("pawnLook = " + pawnLook);
-
         player.start();
         update();
-        return true;
 
+        return true;
     }
+
+    private boolean geesePlay(String line) {
+        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
+        Board board = gameStage.getBoard();
+
+        // start and end coordinates
+        int fromR = line.charAt(0) - 'A';
+        int fromC = line.charAt(1) - '1';
+        int toR = line.charAt(2) - 'A';
+        int toC = line.charAt(3) - '1';
+
+        if (fromR < 0 || fromR >= 7 || fromC < 0 || fromC >= 7 ||
+                toR < 0 || toR >= 7 || toC < 0 || toC >= 7) {
+            System.out.println("error into coordinates !");
+            return false;
+        }
+
+        GameElement element = board.getFirstElement(fromR, fromC);
+        if (element == null) {
+            System.out.println("There is no goose here !");
+            return false;
+        }
+        Pawn goose = (Pawn) element;
+
+        if (!goose.isGoose()) {
+            System.out.println("It's geese turn !");
+            return false;
+        }
+
+        board.setValidCells(goose, fromR, fromC);
+        if (!board.getReachableCells()[toR][toC]) {
+            System.out.println("impossible move !");
+            return false;
+        }
+
+        ActionList actions = ActionFactory.generateMoveWithinContainer(model, goose, toR, toC);
+        actions.setDoEndOfTurn(false);
+        ActionPlayer player = new ActionPlayer(model, this, actions);
+        player.start();
+        update();
+
+        return true;
+    }
+
 
     private int partyWinned (int row, int col) {
         // 0 = no one | 1 = Fox | 2 = Geese
@@ -178,8 +246,6 @@ public class HoleController extends Controller {
 
         HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
         Board board = gameStage.getBoard();
-
-        //System.out.println("(" + row + "; " + col + ")");
 
         if (gameStage.getGeeseToPlay() < 4) {
             whoWon = 1;
@@ -191,8 +257,6 @@ public class HoleController extends Controller {
             if (reachableCells == 0) {
                 whoWon = 2;
             }
-
-            //System.out.println("reachableCells --> " + reachableCells);
         }
 
         return whoWon;

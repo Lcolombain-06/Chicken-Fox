@@ -18,7 +18,7 @@ public class PawnLook extends ElementLook {
         if (p.isFox()) {
             shape[0][0] = "\u001B[31mF\u001B[0m"; // red F
         } else if (p.isGoose()) {
-            shape[0][0] = "G";
+            shape[0][0] = "\u001B[33mG\u001B[0m";
         } else {
             shape[0][0] = " ";
         }

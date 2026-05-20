@@ -9,14 +9,13 @@ public class HoleStageModel extends GameStageModel {
     private Pawn selectedPawn;
 
     private Board board;
-    private HolePawnPot goosePot;
-    private HolePawnPot foxPot;
 
     private Pawn[] geese;
     private Pawn[] fox;
 
     private int foxRow;
     private int foxCol;
+    private boolean foxCaptured; //true when the fox did a capture
 
     private TextElement playerName;
 
@@ -30,6 +29,7 @@ public class HoleStageModel extends GameStageModel {
 
         foxRow = 2;
         foxCol = 3;
+        foxCaptured = false;
 
         setupCallbacks();
     }
@@ -113,6 +113,10 @@ public class HoleStageModel extends GameStageModel {
         return this.geeseToPlay;
     }
 
+    public void eatGeese() {
+        this.geeseToPlay = geeseToPlay - 1;
+    }
+
     //coordinates of the fox
     public int getFoxRow() {
         return this.foxRow;
@@ -120,6 +124,14 @@ public class HoleStageModel extends GameStageModel {
 
     public int getFoxCol() {
         return this.foxCol;
+    }
+
+    // gestion of multi-capturing
+    public boolean isFoxCaptured() {
+        return foxCaptured;
+    }
+    public void setFoxCaptured(boolean foxCaptured) {
+        this.foxCaptured = foxCaptured;
     }
 
     public void setFoxCoo (int row, int col) {

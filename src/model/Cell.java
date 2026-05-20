@@ -1,6 +1,5 @@
 package model;
 
-import model.Pawn;
 import java.util.ArrayList;
 
 public class Cell {

@@ -23,12 +23,12 @@ public class HoleStageFactory extends StageElementsFactory {
         Board board = new Board(0, 0, stageModel);
         stageModel.setBoard(board);
 
-        Pawn[] geese = new Pawn[13];
+        Pawn[] geese = new Pawn[stageModel.getGeeseToPlay()];
         int index = 0;
 
-        for (int row = 4; row < 7; row++) {       // changer l'implementation, trop de break
+        for (int row = 4; row < 7; row++) {
             for (int col = 0; col < 7; col++) {
-                if (index >= 13) break;
+                if (index >= stageModel.getGeeseToPlay()) break;
                 if (!board.getCell(col, row).isAccessible()) continue;
 
                 Pawn p = new Pawn(Pawn.GOOSE, stageModel);

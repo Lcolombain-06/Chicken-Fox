@@ -6,6 +6,7 @@ import model.Cell;
 
 public class BoardLook extends ContainerLook {
     private Board board;
+    private static final char[] COO = {'A', 'B', 'C', 'D', 'E', 'F', 'G'};
 
     public BoardLook(Board board) {
         super(board, 2, 4, 1, 1, 2);
@@ -17,71 +18,36 @@ public class BoardLook extends ContainerLook {
         setSize(getWidth(), getHeight());
         clearShape();
 
-        char[] coo = {'A', 'B', 'C', 'D', 'E', 'F', 'G'};
+        for (int row = 0; row < nbRows; row++)
+            for (int col = 0; col < nbCols; col++)
+                renderCell(row, col);
 
-        for (int row = 0; row < nbRows; row++) {
-            for (int col = 0; col < nbCols; col++) {
-                Cell cell = board.getCell(row, col);
-
-                if (!cell.isAccessible()) continue;
-
-                // positions into the cell
-                int top = row * rowHeight;
-                int left = col * colWidth;
-
-                int centerY = top + 1;
-                int centerX = left + 2;
-
-
-                shape[0][centerX] = "" + (col + 1);
-                shape[centerY][0] = "" + coo[row];
-
-                // center of this cell
-                shape[centerY][centerX] = "+";
-
-                // Neighbors
-                for (Cell neighbor : cell.getNeighbors()) {
-
-                    int dRow = neighbor.getX() - row;
-                    int dCol = neighbor.getY() - col;
-
-                    // up
-                    if (dRow == -1 && dCol == 0) {
-                        shape[centerY - 1][centerX] = "|";
-                    }
-
-                    // right
-                    else if (dRow == 0 && dCol == 1) {
-                        shape[centerY][centerX + 1] = "-";
-                        shape[centerY][centerX + 2] = "-";
-
-                    }
-
-                    // left
-                    else if (dRow == 0 && dCol == -1) {
-                        shape[centerY][centerX - 1] = "-";
-                    }
-
-                    // diagonale haut-gauche
-                    else if (dRow == -1 && dCol == -1) {
-                        shape[centerY - 1][centerX - 2] = "\\";
-                    }
-
-                    // diagonale haut-droite
-                    else if (dRow == -1 && dCol == 1) {
-                        shape[centerY - 1][centerX + 2] = "/";
-                    }
-                }
-            }
-        }
-
-        // Debug test
-        /**
-         for (int i = 0; i < nbRows; i++) {
-         for (int j = 0; j < nbCols; j++) {
-         System.out.println("cell ["+i+"]["+j+"] has " + grid[i][j].size() + " looks");
-         }
-         }**/
         renderInners();
+    }
+
+    private void renderCell(int row, int col) {
+        Cell cell = board.getCell(row, col);
+        if (!cell.isAccessible()) return;
+
+        int centerY = row * rowHeight + 1;
+        int centerX = col * colWidth + 2;
+
+        shape[14][centerX] = "" + (col + 1);
+        shape[centerY][0] = "" + COO[row];
+        shape[centerY][centerX] = "+";
+
+        for (Cell neighbor : cell.getNeighbors())
+            renderNeighborLink(centerY, centerX, neighbor, row, col);
+    }
+
+    private void renderNeighborLink(int cy, int cx, Cell neighbor, int row, int col) {
+        int dRow = neighbor.getX() - row;
+        int dCol = neighbor.getY() - col;
+
+        if      (dRow == -1 && dCol ==  0) shape[cy - 1][cx]     = "|";
+        else if (dRow ==  0 && dCol ==  1) { shape[cy][cx + 1] = "-"; shape[cy][cx + 2] = "-"; }
+        else if (dRow ==  0 && dCol == -1) shape[cy][cx - 1]     = "-";
+        else if (dRow == -1 && dCol == -1) shape[cy - 1][cx - 2] = "\\";
+        else if (dRow == -1 && dCol ==  1) shape[cy - 1][cx + 2] = "/";
     }
 }
