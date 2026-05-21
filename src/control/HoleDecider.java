@@ -6,12 +6,10 @@ import boardifier.control.Decider;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import model.Board;
-import model.HolePawnPot;
-import model.HoleStageModel;
-import model.Pawn;
+import model.*;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
@@ -26,42 +24,95 @@ public class HoleDecider extends Decider {
 
     @Override
     public ActionList decide() {
-        //!! Il faut faire cette partie, elle ne fonctionne pas pour le moment !!
-        // do a cast get a variable of the real type to get access to the attributes of HoleStageModel
-        HoleStageModel stage = (HoleStageModel)model.getGameStage();
-        Board board = stage.getBoard(); // get the board
-        HolePawnPot pot = null; // the pot where to take a pawn
-        GameElement pawn = null; // the pawn that is moved
-        int rowDest = 0; // the dest. row in board
-        int colDest = 0; // the dest. col in board
-    /**
-        if (model.getIdPlayer() == Pawn.PAWN_BLACK) {
-            pot = stage.getBlackPot();
-        }
-        else {
-            pot = stage.getRedPot();
-        }
 
-        for(int i=0;i<4;i++) {
-            Pawn p = (Pawn)pot.getElement(i,0);
-            // if there is a pawn in i.
-            if (p != null) {
-                // get the valid cells
-                List<Point> valid = board.computeValidCells(p.getNumber());
-                if (valid.size() != 0) {
-                    // choose at random one of the valid cells
-                    int id = loto.nextInt(valid.size());
-                    pawn = p;
-                    rowDest = valid.get(id).y;
-                    colDest = valid.get(id).x;
-                    break; // stop the loop
+        HoleStageModel stage = (HoleStageModel) model.getGameStage();
+        Board board = stage.getBoard();
+
+        // Fox strategie :
+
+        Pawn fox = stage.getFox()[0];
+
+        int[] pos = board.getElementCell(fox);
+        int foxRow = pos[0];
+        int foxCol = pos[1];
+
+        board.setValidCells(fox, foxRow, foxCol);
+
+        // 4. Collecter toutes les cases valides
+        List<int[]> validMoves = new ArrayList<>();
+        for (int r = 0; r < 7; r++) {
+            for (int c = 0; c < 7; c++) {
+                if (board.getReachableCells()[r][c]) {
+                    validMoves.add(new int[]{r, c});
                 }
             }
-        }**/
+        }
 
-        ActionList actions = ActionFactory.generatePutInContainer( model, pawn, "holeboard", rowDest, colDest);
-        actions.setDoEndOfTurn(true); // after playing this action list, it will be the end of turn for current player.
+        // 5. Scorer chaque coup et choisir le meilleur
+        int bestScore = Integer.MIN_VALUE;
+        int[] bestMove = null;
+        for (int[] move : validMoves) {
+            int score = scoreMove(fox, foxRow, foxCol, move[0], move[1], board, stage);
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = move;
+            }
+        }
 
+        // 6. Créer et retourner l'action
+        ActionList actions = ActionFactory.generateMoveWithinContainer(
+                model, fox, bestMove[0], bestMove[1]); // ← bestMove pas chosen
+
+        // si c'est un saut, manger la poule
+        if (Math.abs(bestMove[0] - foxRow) == 2 || Math.abs(bestMove[1] - foxCol) == 2) {
+            GameElement geeseToEat = board.getFirstElement(
+                    (foxRow + bestMove[0]) / 2,
+                    (foxCol + bestMove[1]) / 2
+            );
+            ActionList removeAction = ActionFactory.generateRemoveFromContainer(model, geeseToEat);
+            actions.addAll(removeAction);
+            stage.eatGeese();
+        }
+
+        stage.setFoxCoo(bestMove[0], bestMove[1]);
+        actions.setDoEndOfTurn(true);
         return actions;
+    }
+
+    private int scoreMove(Pawn fox, int fromR, int fromC, int toR, int toC, Board board, HoleStageModel stage) {
+        int score = 0;
+
+        // 1. Priorité absolue aux captures
+        if (Math.abs(toR - fromR) == 2 || Math.abs(toC - fromC) == 2) {
+            score += 1000;
+        }
+
+        // 2. Pondération position : plus c'est bas, mieux c'est
+        score += toR * 10;
+
+        // 3. Bonus si poule isolée à portée depuis la case destination
+        Cell destCell = board.getCell(toC, toR);
+        for (Cell neighbor : destCell.getNeighbors()) {
+            int nx = neighbor.getX();
+            int ny = neighbor.getY();
+            GameElement e = board.getElement(ny, nx);
+            if (e != null && ((Pawn) e).isGoose()) {
+                // il y a une poule voisine, est-elle isolée ?
+                int gooseNeighborCount = 0;
+                for (Cell nn : neighbor.getNeighbors()) {
+                    GameElement e2 = board.getElement(nn.getY(), nn.getX());
+                    if (e2 != null && ((Pawn) e2).isGoose()) {
+                        gooseNeighborCount++;
+                    }
+                }
+                if (gooseNeighborCount <= 1) {
+                    score += 50; // poule isolée, bonus
+                }
+            }
+        }
+
+
+
+        return score;
     }
 }
