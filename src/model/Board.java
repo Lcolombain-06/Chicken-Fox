@@ -1,6 +1,7 @@
 package model;
 
 import boardifier.control.Logger;
+import boardifier.model.GameElement;
 import boardifier.model.GameStageModel;
 import boardifier.model.ContainerElement;
 
@@ -27,65 +28,62 @@ public class Board extends ContainerElement {
 
     // return a cell of the board (usefull for the movements of the pawns, they can check neighbors).
     public Cell getCell(int x, int y) {
-        return this.cells[x][y];
+        return this.cells[y][x];
     }
 
-    public void setValidCells(Pawn pawn) {
-        resetReachableCells(false);
-        int[] pos = getElementCell(pawn);  // méthode héritée de ContainerElement
-        if (pos == null) return;
-        int row = pos[0];
-        int col = pos[1];
+    public int setValidCells(Pawn pawn, int row, int col){
+        int nbrValidCells = 0;
 
-        List<Point> valid;
-        if (pawn.getColor() == Pawn.PAWN_BLACK) {
-            valid = computeValidCellsChicken(row, col);
-        } else {
-            valid = computeValidCellsFox(row, col);
-        }
-        for (Point p : valid) {
-            reachableCells[p.y][p.x] = true;
-        }
-    }
-
-
-    // MVT POULE
-    public List<Point> computeValidCellsChicken(int row, int col) {
-        List<Point> valid = new ArrayList<>();
-
-
-        //demandé si correspond bien au, bon move
-        int[][] chickenDeltas = {
-                {0, -1},   // gauche
-                {0, +1},   // droite
-                {+1, 0},   // bas
-                {+1, -1},  // bas-gauche
-                {+1, +1},  // bas-droite
-        };
-
-        Cell src = cells[row][col];
-
-        for (int[] delta : chickenDeltas) {
-            int newRow = row + delta[0];
-            int newCol = col + delta[1];
-
-            // ccondition pour eviter les sortie de plateau.
-            if (newRow < 0 || newRow >= 7 || newCol < 0 || newCol >= 7) continue;
-
-
-            // Si la case est accesible. Donc correspond a un voisin
-            if (!dest.isAccessible()) continue;
-            // Verifie que sur la case il n'y a pas d'autre pion
-            if (!isEmptyAt(newRow, newCol)) continue;
-
-            // vérifier que c'est bien un voisin déclaré (respecte la forme du plateau)
-            Cell src = cells[row][col];
-            if (src.getNeighbors().contains(dest)) {
-                valid.add(new Point(newCol, newRow));
+        // Set every Cell at false
+        for (int r=0; r<7; ++r){
+            for (int c=0; c<7; ++c){
+                reachableCells[r][c] = false;
             }
         }
 
-        return valid;
+        Cell current = cells[row][col];
+        if (pawn.isFox()){
+            for (Cell neighbor : current.getNeighbors()){
+                int neighborX = neighbor.getX();
+                int neighborY = neighbor.getY();
+
+                // Is the Cell free ?
+                if (getElement(neighborY, neighborX) == null){
+                    reachableCells[neighborY][neighborX] = true;
+                    nbrValidCells += 1;
+                }
+
+                // It is occupied so we check behind this cell
+                else {
+
+                    int jumpX = neighborX + (neighborX - col);
+                    int jumpY = neighborY + (neighborY - row);
+
+                    if (jumpX < 7 && jumpX >= 0 && jumpY >=0 && jumpY < 7){
+                        Cell jumpToCell = cells[jumpY][jumpX];
+                        if (jumpToCell.isAccessible() && getElement(jumpY,jumpX) == null){
+                            reachableCells[jumpY][jumpX] = true;
+                            nbrValidCells += 1;
+                        }
+                    }
+                }
+
+            }
+        }
+        else {
+            // Geese,
+            for (Cell neighbor : current.getNeighbors()) {
+                int nx = neighbor.getX();
+                int ny = neighbor.getY();
+                // forbidden the movement in down direction
+                if (ny <= row && (nx == col || ny == row) && getElement(ny, nx) == null) {
+                    reachableCells[ny][nx] = true;
+                }
+
+            }
+        }
+
+        return nbrValidCells;
     }
 
 
@@ -115,7 +113,7 @@ public class Board extends ContainerElement {
         int[][] orthogonal = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
         int[][] diagonal = {{-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
 
-        for(int y = 0; y < 7 , y++) {
+        for(int y = 0; y < 7; y++) {
             for (int x = 0; x < 7; x++) {
                 Cell c = cells[y][x];
 
@@ -128,7 +126,7 @@ public class Board extends ContainerElement {
                     //ajout verification des limites
                     if (nx < 0 || ny < 0 || nx >= 7 || ny >= 7) continue;
                     if(cells[ny][nx].isAccessible()) {
-                        c.addNeighbor(cells[ny][nx]);
+                        c.addNeighbors(cells[ny][nx]);
                     }
                 }
 
@@ -138,12 +136,133 @@ public class Board extends ContainerElement {
                         int nx = x + d[0];
                         int ny = y + d[1];
 
-                        if(cells[ny][nx].isAccessible()) {
-                            c.addNeighbor(cells[ny][nx]);
+                        if (nx < 0 || ny < 0 || nx >= 7 || ny >= 7) continue;
+
+                        if (cells[ny][nx].isAccessible()) {
+                            c.addNeighbors(cells[ny][nx]);
                         }
                     }
                 }
             }
         }
     }
+
+    /**
+     * Computes the total number of legal moves and captures available for the fox.
+     * This is used by the AI to evaluate how well the fox is trapped.
+     * @return the number of possible moves/captures
+     */
+    public int countPossibleFoxMoves() {
+        int totalMoves = 0;
+
+        int foxX = -1;
+        int foxY = -1;
+        Cell cellFox = null;
+
+        // 1. LOCATE THE FOX ON THE BOARD
+        for (int y = 0; y < 7; y++) {
+            for (int x = 0; x < 7; x++) {
+                if (cells[y][x].isAccessible() && getElement(y, x) != null) {
+                    Pawn p = (Pawn) getElement(y, x);
+                    if (p.isFox()) {
+                        foxX = x;
+                        foxY = y;
+                        cellFox = cells[y][x];
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Security check: if fox is not found, return 0
+        if (cellFox == null) return 0;
+
+        // 2. INSPECT NEIGHBORS AND COUNT MOVES
+        for (Cell neighbor : cellFox.getNeighbors()) {
+            int nx = neighbor.getX();
+            int ny = neighbor.getY();
+
+
+            // increment totalMoves by 1.
+            if (getElement(ny, nx) == null) {
+                totalMoves += 1;
+            }
+            else {
+                // 1. Calculate jumpX and jumpY (using nx, ny, foxX, and foxY, exactly like in setValidCells)
+                int jumpX = nx + (nx - foxX);
+                int jumpY = ny + (ny - foxY);
+                if (jumpX < 7 && jumpX >= 0 && jumpY >= 0 && jumpY < 7) {
+                    Cell jumpToCell = cells[jumpY][jumpX];
+                    if (jumpToCell.isAccessible() && getElement(jumpY, jumpX) == null) {
+                        totalMoves += 1;
+                    }
+                }
+            }
+        }
+
+        return totalMoves;
+    }
+
+    /**
+     * Computes the total number of chickens currently vulnerable to an immediate fox capture.
+     * This is used by the AI to avoid moves that give away free chickens.
+     * @return the number of chickens in danger
+     */
+    public int countChickensInDanger() {
+        int chickensInDanger = 0;
+
+        int foxX = -1;
+        int foxY = -1;
+        Cell cellFox = null;
+
+        // 1. LOCATE THE FOX ON THE BOARD
+        for (int y = 0; y < 7; y++) {
+            for (int x = 0; x < 7; x++) {
+                if (cells[y][x].isAccessible() && getElement(y, x) != null) {
+                    Pawn p = (Pawn) getElement(y, x);
+                    if (p.isFox()) {
+                        foxX = x;
+                        foxY = y;
+                        cellFox = cells[y][x];
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (cellFox == null) return 0;
+
+        // 2. INSPECT NEIGHBORS TO FIND CHICKENS IN DANGER
+        for (Cell neighbor : cellFox.getNeighbors()) {
+            int nx = neighbor.getX();
+            int ny = neighbor.getY();
+
+            if (getElement(ny, nx) != null) {
+
+
+                int jumpX = nx + (nx - foxX);
+                int jumpY = ny + (ny - foxY);
+
+
+                if (jumpX >= 0 && jumpX < 7 && jumpY >= 0 && jumpY < 7) {
+                    Cell jumpToCell = cells[jumpY][jumpX];
+
+                    if (jumpToCell.isAccessible() && getElement(jumpY, jumpX) == null) {
+                        // 4. If true, increment chickensInDanger by 1.
+                        chickensInDanger += 1;
+                    }
+                }
+            }
+        }
+
+        return chickensInDanger;
+    }
+
+    public void clearValidCells() {
+        for (int r = 0; r < 7; r++)
+            for (int c = 0; c < 7; c++)
+                reachableCells[r][c] = false;
+    }
+
 }
+
