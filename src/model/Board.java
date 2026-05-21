@@ -26,13 +26,17 @@ public class Board extends ContainerElement {
     // during the game loop, call to check all the possible move of the selected cell (fox or goose),
     // and then, call the setValidCells of the type of pawn in function of which player turn it is
     public int setValidCells(Pawn pawn, int row, int col) {
+        //System.out.println("setValidCells appelé pour " + (pawn.isFox() ? "RENARD" : "POULE") + " en [" + row + "][" + col + "]");
+
+
+
         for (int r = 0; r < 7; r++)
             for (int c = 0; c < 7; c++)
                 reachableCells[r][c] = false;
 
         Cell current = cells[row][col];
         if (pawn.isFox()) return setFoxValidCells(current, row, col);
-        else { setGeeseValidCells(current, row); return 0; }
+        else { setGeeseValidCells(current, row, col); return 0; }
     }
 
     // check all the possible move of the fox (simple one and capture)
@@ -61,11 +65,16 @@ public class Board extends ContainerElement {
     }
 
     // check all the possible move of a goose
-    private void setGeeseValidCells(Cell current, int row) {
+    private void setGeeseValidCells(Cell current, int row, int col) {
+
         for (Cell neighbor : current.getNeighbors()) {
+
             int nx = neighbor.getX();
             int ny = neighbor.getY();
-            if (ny <= row && (nx == current.getX() || ny == row) && getElement(ny, nx) == null) {
+            boolean vertical = (nx == col && ny < row);   // monter verticalement
+            boolean horizontal = (ny == row && nx != col); // se déplacer horizontalement
+
+            if ((vertical || horizontal) && getElement(ny, nx) == null) {
                 reachableCells[ny][nx] = true;
             }
         }

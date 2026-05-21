@@ -85,8 +85,11 @@ public class HoleController extends Controller {
         if (p.getType() == Player.COMPUTER) {
             System.out.println("COMPUTER PLAYS");
             HoleDecider decider = new HoleDecider(model,this);
-            ActionPlayer play = new ActionPlayer(model, this, decider, null);
+            ActionList actions = decider.decide();
+            actions.setDoEndOfTurn(false);
+            ActionPlayer play = new ActionPlayer(model, this, actions);
             play.start();
+            update();
         }
         else {
             boolean ok = false;
@@ -223,10 +226,19 @@ public class HoleController extends Controller {
             System.out.println("It's geese turn !");
             return false;
         }
+        // debug
+        System.out.println("Cases valides pour la poule en " + fromR + "," + fromC + " :");
+        for (int r = 0; r < 7; r++) {
+            for (int c = 0; c < 7; c++) {
+                System.out.print(board.getReachableCells()[r][c] ? "1" : "0");
+            }
+            System.out.println();
+        }
 
+        //System.out.println("Case demandée [" + toR + "][" + toC + "] = " + board.getReachableCells()[toR][toC]);
         board.setValidCells(goose, fromR, fromC);
         if (!board.getReachableCells()[toR][toC]) {
-            System.out.println("impossible move !");
+            System.out.println("trop loin");
             return false;
         }
 
