@@ -80,12 +80,19 @@ public class HoleController extends Controller {
     }
 
     private void playTurn() {
-        // get the new player
         Player p = model.getCurrentPlayer();
         if (p.getType() == Player.COMPUTER) {
             System.out.println("COMPUTER PLAYS");
-            HoleDecider decider = new HoleDecider(model,this);
-            ActionList actions = decider.decide();
+
+            ActionList actions;
+            if (model.getIdPlayer() == 0) {
+                HoleDecider decider = new HoleDecider(model, this);
+                actions = decider.decide();
+            } else {
+                GooseDecider decider = new GooseDecider(model, this);
+                actions = decider.decide();
+            }
+
             actions.setDoEndOfTurn(false);
             ActionPlayer play = new ActionPlayer(model, this, actions);
             play.start();
@@ -94,18 +101,17 @@ public class HoleController extends Controller {
         else {
             boolean ok = false;
             while (!ok) {
-                System.out.print(p.getName()+ " > ");
+                System.out.print(p.getName() + " > ");
                 try {
                     String line = consoleIn.readLine();
                     if (line.length() == 4 || line.length() == 2) {
                         ok = analyseAndPlay(line);
-
                     }
                     if (!ok) {
                         System.out.println("incorrect instruction. retry !");
                     }
                 }
-                catch(IOException e) {}
+                catch (IOException e) {}
             }
         }
     }
