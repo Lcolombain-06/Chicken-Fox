@@ -81,20 +81,10 @@ public class GooseDecider extends Decider {
         return actions;
     }
 
-    /**
-     * Scores a goose move based on how well it blocks the fox.
-     * Higher is better for the geese.
-     *
-     * Criteria:
-     *  - Heavily penalise moves that leave a goose capturable
-     *  - Reward moves that reduce the number of free cells around the fox
-     *  - Reward advancing (moving toward the fox row) to tighten the blockade
-     */
-    private int evaluateGooseMove(Board board, int foxRow, int foxCol,
-                                  int origRow, int origCol, int simRow, int simCol) {
-        int score = 0;
+    private int evaluateGooseMove(Board board, int foxRow, int foxCol, int origRow, int origCol, int simRow, int simCol) {
 
-        // --- A. Count fox free moves AFTER this goose move ---
+        int score = 0;
+        // Count fox free moves AFTER this goose move
         int foxFreeMoves = 0;
         int geeseThreatened = 0;
 
@@ -103,7 +93,7 @@ public class GooseDecider extends Decider {
             int nx = neighbor.getX();
             int ny = neighbor.getY();
 
-            // Simulate the move: origRow/Col is now empty, simRow/Col is now occupied
+            // Simulate the move
             GameElement elem = board.getElement(ny, nx);
             if (ny == origRow && nx == origCol) elem = null;
             if (ny == simRow  && nx == simCol)  elem = board.getElement(origRow, origCol);
@@ -131,19 +121,46 @@ public class GooseDecider extends Decider {
         score -= foxFreeMoves * 10;
 
         // Avoid putting a goose in capture range
-        score -= geeseThreatened * 50;
+        score -= geeseThreatened * 150;
 
-        // --- B. Reward moving closer to the fox (tightening the blockade) ---
+        // Reward moving closer to the fox
         int distBefore = Math.abs(origRow - foxRow) + Math.abs(origCol - foxCol);
         int distAfter  = Math.abs(simRow  - foxRow) + Math.abs(simCol  - foxCol);
         if (distAfter < distBefore) {
             score += 15;
         }
 
-        // --- C. Reward advancing upward on the board (geese move up) ---
-        if (simRow < origRow) {
-            score += 5;
+        // The goose form a group
+        Cell simCell = board.getCell(simCol, simRow);
+        int gooseNeighbors = 0;
+
+        for (Cell neighbor : simCell.getNeighbors()) {
+            int nx = neighbor.getX();
+            int ny = neighbor.getY();
+
+            if (ny == origRow && nx == origCol) continue;
+
+            GameElement neighborElem = board.getElement(ny, nx);
+
+            if (neighborElem != null && ((Pawn) neighborElem).isGoose()) {
+                gooseNeighbors++;
+            }
         }
+        score += gooseNeighbors * 12;
+
+        if (simRow > foxRow) {
+            // The goal here is to stop the fox by being close of his column
+            int colDiff = Math.abs(simCol - foxCol);
+            if (colDiff <= 1) {
+                score += 20; // huge bonus because we are in front of him and his traped
+            }
+        }
+
+        if ((simRow == foxRow && Math.abs(simCol - foxCol) == 2) ||
+                (simCol == foxCol && Math.abs(simRow - foxRow) == 2)) {
+            score += 10;
+        }
+
 
         return score;
     }
