@@ -67,14 +67,7 @@ public class HoleController extends Controller {
                     break;
                 }
 
-                System.out.print("Another capture is possible, do you want to do it (O/N): ");
-                try {
-                    String answer = consoleIn.readLine();
-                    if (!answer.equalsIgnoreCase("O")) {
-                        gameStage.setFoxCaptured(false);
-                        break;
-                    }
-                } catch (IOException e) {}
+                System.out.println("Another capture is possible, it's still" +  model.getCurrentPlayer().getName() + "turn!");
             }
         } while (gameStage.isFoxCaptured());
     }

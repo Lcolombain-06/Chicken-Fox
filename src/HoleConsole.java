@@ -102,10 +102,10 @@ public class HoleConsole {
 
             if (whoIsFox == 1 || whoIsFox > 2) {
                 model.addHumanPlayer(player);
-                model.addComputerPlayer(player + "2 " + bot);
+                model.addComputerPlayer("Player2 " + bot);
                 System.out.println("Player will be the fox!");
             } else {
-                model.addComputerPlayer(player + "1 " + bot);
+                model.addComputerPlayer("Player1 " + bot);
                 model.addHumanPlayer(player);
                 System.out.println("bot will be the fox!");
             }
