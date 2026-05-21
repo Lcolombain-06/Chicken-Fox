@@ -10,36 +10,40 @@ public class HoleConsole {
 
 
     public static void main(String[] args) {
+        String player = "Player";
+        String bot = "(bot)";
+
         // 1. Modèle global
         Model model = new Model();
 
         if (args.length >= 1 && args.length < 3) {
             int nbrplayer = Integer.parseInt(args[0]);
             int whoIsFox = 1;
+
             if (args.length == 2) {
                 whoIsFox = Integer.parseInt(args[1]);
             }
 
             if (nbrplayer == 0) {
-                model.addComputerPlayer("Player1 (bot)");
-                model.addComputerPlayer("Player2 (bot)");
+                model.addComputerPlayer(player + "1 " + bot);
+                model.addComputerPlayer(player + "2 " + bot);
             }
 
             else if (nbrplayer == 1) {
                 if (whoIsFox == 1 || whoIsFox > 2) {
-                    model.addHumanPlayer("Player1");
-                    model.addComputerPlayer("Player2 (bot)");
+                    model.addHumanPlayer(player);
+                    model.addComputerPlayer(player + "2 " + bot);
                 }
 
                 else {
-                    model.addComputerPlayer("Player1 (bot)");
-                    model.addHumanPlayer("Player2");
+                    model.addComputerPlayer(player + "1 " + bot);
+                    model.addHumanPlayer(player);
                 }
             }
 
             else {
-                model.addHumanPlayer("Player1");
-                model.addHumanPlayer("Player2");
+                model.addHumanPlayer(player);
+                model.addHumanPlayer(player);
             }
         }
 
@@ -68,19 +72,21 @@ public class HoleConsole {
 
 
 
-    private static void playerSelection (Model model) {
+    private static void playerSelection(Model model) {
+        String player = "Player";
+        String bot = "(bot)";
+
         titlePrint();
         System.out.println("\n");
-
         System.out.println("Welcome in geese and fox!");
         System.out.print("Select the number of human player: ");
         int nbrplayer = input.nextInt();
+        input.nextLine();
         System.out.println();
 
         if (nbrplayer == 0) {
-            model.addComputerPlayer("Player1 (bot)");
-            model.addComputerPlayer("Player2 (bot)");
-
+            model.addComputerPlayer(player + "1 " + bot);
+            model.addComputerPlayer(player + "2 " + bot);
             System.out.println("Bot-only mod selected!");
         }
 
@@ -88,24 +94,33 @@ public class HoleConsole {
             System.out.println("Bot-human mod selected!");
             System.out.print("Who will play the fox (1 = player; 2 = bot): ");
             int whoIsFox = input.nextInt();
+            input.nextLine();
+
+            System.out.print("\nPlayer, choose your name: ");
+            player = input.nextLine();
             System.out.println();
 
             if (whoIsFox == 1 || whoIsFox > 2) {
-                model.addHumanPlayer("Player1");
-                model.addComputerPlayer("Player2 (bot)");
+                model.addHumanPlayer(player);
+                model.addComputerPlayer("Player2 " + bot);
                 System.out.println("Player will be the fox!");
-            }
-
-            else {
-                model.addComputerPlayer("Player1 (bot)");
-                model.addHumanPlayer("Player2");
+            } else {
+                model.addComputerPlayer("Player1 " + bot);
+                model.addHumanPlayer(player);
                 System.out.println("bot will be the fox!");
             }
         }
 
         else {
-            model.addHumanPlayer("Player1");
-            model.addHumanPlayer("Player2");
+            System.out.print("\nPlayer1, choose your name: ");
+            player = input.nextLine();
+            System.out.println();
+            model.addHumanPlayer(player);
+
+            System.out.print("\nPlayer2, choose your name: ");
+            player = input.nextLine();
+            System.out.println();
+            model.addHumanPlayer(player);
             System.out.println("Human VS Human mode selected!");
         }
     }
