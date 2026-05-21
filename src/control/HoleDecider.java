@@ -92,6 +92,7 @@ public class HoleDecider extends Decider {
                                 gooseNeighborCount++;
                             }
                         }
+
                         if (gooseNeighborCount <= 1) {
                             score += 50; // poule isolée, bonus
 
@@ -115,19 +116,21 @@ public class HoleDecider extends Decider {
 
         int[] bestMove = chooseBestMove();
 
-        ActionList actions = ActionFactory.generateMoveWithinContainer(
-                model, fox, bestMove[0], bestMove[1]);
+        ActionList actions = new ActionList();
 
         if (Math.abs(bestMove[0] - foxRow) == 2 || Math.abs(bestMove[1] - foxCol) == 2) {
             GameElement geeseToEat = board.getFirstElement(
                     (foxRow + bestMove[0]) / 2,
                     (foxCol + bestMove[1]) / 2);
             if (geeseToEat != null) {
-                actions.addAll(ActionFactory.generateRemoveFromContainer(model, geeseToEat));
+                actions.addAll(ActionFactory.generateRemoveFromStage(model, geeseToEat));
                 stage.eatGeese();
             }
             stage.setFoxCaptured(true);
         }
+
+
+        actions.addAll(ActionFactory.generateMoveWithinContainer(model, fox, bestMove[0], bestMove[1]));
 
         stage.setFoxCoo(bestMove[0], bestMove[1]);
         actions.setDoEndOfTurn(true);

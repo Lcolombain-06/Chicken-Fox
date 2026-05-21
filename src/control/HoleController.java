@@ -185,17 +185,18 @@ public class HoleController extends Controller {
         // update fox coordinates
         gameStage.setFoxCoo(toR, toC);
 
-        ActionList actions = ActionFactory.generateMoveWithinContainer(model, fox, toR, toC);
+        ActionList actions = new ActionList();
 
         // if a geese is taken
         if (Math.abs(toC - fromC) == 2 || Math.abs(toR - fromR) == 2) {
             GameElement geeseToEat = board.getFirstElement((fromR + toR) / 2, (fromC + toC) / 2);
-            ActionList removeAction = ActionFactory.generateRemoveFromContainer(model, geeseToEat);
+            ActionList removeAction = ActionFactory.generateRemoveFromStage(model, geeseToEat);
             actions.addAll(removeAction);
             gameStage.eatGeese();
 
             gameStage.setFoxCaptured(true); //flag update for multi-captures
         }
+        actions.addAll(ActionFactory.generateMoveWithinContainer(model, fox, toR, toC));
 
         actions.setDoEndOfTurn(false);
         ActionPlayer player = new ActionPlayer(model, this, actions);
