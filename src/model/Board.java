@@ -23,93 +23,80 @@ public class Board extends ContainerElement {
         return this.cells[y][x];
     }
 
+    // during the game loop, call to check all the possible move of the selected cell (fox or goose),
+    // and then, call the setValidCells of the type of pawn in function of which player turn it is
     public int setValidCells(Pawn pawn, int row, int col) {
-        resetReachableCells();
-        Cell current = cells[row][col];
-        return pawn.isFox() ? setFoxValidCells(current, row, col) : setGooseValidCells(current, row);
-    }
-
-    public boolean foxCanCapture(Pawn fox, int row, int col) {
-        setValidCells(fox, row, col);
-        for (int r = 0; r < 7; r++) {
-            for (int c = 0; c < 7; c++) {
-                if (reachableCells[r][c] && isJump(r, c, row, col)) return true;
-            }
-        }
-        return false;
-    }
-
-    // --- private helpers (made because of the refractor of the big main methods into smaller ones ---
-
-    private void resetReachableCells() {
         for (int r = 0; r < 7; r++)
             for (int c = 0; c < 7; c++)
                 reachableCells[r][c] = false;
+
+        Cell current = cells[row][col];
+        if (pawn.isFox()) return setFoxValidCells(current, row, col);
+        else { setGeeseValidCells(current, row); return 0; }
     }
 
-    private boolean isJump(int r, int c, int fromRow, int fromCol) {
-        return Math.abs(r - fromRow) == 2 || Math.abs(c - fromCol) == 2;
-    }
-
-    private boolean isFree(int row, int col) {
-        return getElement(row, col) == null;
-    }
-
+    // check all the possible move of the fox (simple one and capture)
     private int setFoxValidCells(Cell current, int row, int col) {
-        int count = 0;
+        int nbrValidCells = 0;
         for (Cell neighbor : current.getNeighbors()) {
-            int nx = neighbor.getX();
-            int ny = neighbor.getY();
-            if (isFree(ny, nx)) {
-                reachableCells[ny][nx] = true;
-                count++;
+            int neighborX = neighbor.getX();
+            int neighborY = neighbor.getY();
+
+            if (getElement(neighborY, neighborX) == null) {
+                reachableCells[neighborY][neighborX] = true;
+                nbrValidCells++;
             } else {
-                count += checkFoxJump(nx, ny, row, col);
+                int jumpX = neighborX + (neighborX - col);
+                int jumpY = neighborY + (neighborY - row);
+                if (jumpX < 7 && jumpX >= 0 && jumpY >= 0 && jumpY < 7) {
+                    Cell jumpToCell = cells[jumpY][jumpX];
+                    if (jumpToCell.isAccessible() && getElement(jumpY, jumpX) == null) {
+                        reachableCells[jumpY][jumpX] = true;
+                        nbrValidCells++;
+                    }
+                }
             }
         }
-        return count;
+        return nbrValidCells;
     }
 
-    private int checkFoxJump(int neighborX, int neighborY, int fromRow, int fromCol) {
-        int jumpX = neighborX + (neighborX - fromCol);
-        int jumpY = neighborY + (neighborY - fromRow);
-        if (jumpX < 0 || jumpX >= 7 || jumpY < 0 || jumpY >= 7) return 0;
-        if (cells[jumpY][jumpX].isAccessible() && isFree(jumpY, jumpX)) {
-            reachableCells[jumpY][jumpX] = true;
-            return 1;
-        }
-        return 0;
-    }
-
-    private int setGooseValidCells(Cell current, int row) {
+    // check all the possible move of a goose
+    private void setGeeseValidCells(Cell current, int row) {
         for (Cell neighbor : current.getNeighbors()) {
             int nx = neighbor.getX();
             int ny = neighbor.getY();
-            if (ny <= row && (nx == current.getX() || ny == row) && isFree(ny, nx)) {
+            if (ny <= row && (nx == current.getX() || ny == row) && getElement(ny, nx) == null) {
                 reachableCells[ny][nx] = true;
             }
         }
-        return 0; // geese don't need a count
     }
 
-    // main init for board's cells
+    // call after a fox's capture, to check if a new one is possible
+    public boolean foxCanCapture(Pawn fox, int row, int col) {
+        setValidCells(fox, row, col);
+        for (int r = 0; r < 7; r++)
+            for (int c = 0; c < 7; c++)
+                if (reachableCells[r][c] && (Math.abs(r - row) == 2 || Math.abs(c - col) == 2)) return true;
+        return false;
+    }
+
+    // made to fill the board with cells
     private void initBoard() {
         cells = new Cell[7][7];
-        for (int y = 0; y < 7; y++)
-            for (int x = 0; x < 7; x++)
-                cells[y][x] = new Cell(x, y, isAccessible(x, y));
+        for (int y = 0; y < 7; y++) {
+            for (int x = 0; x < 7; x++) {
+                boolean accessible = !((x < 2 || x > 4) && (y < 2 || y > 4));
+                cells[y][x] = new Cell(x, y, accessible);
+            }
+        }
         initNeighbors();
     }
 
-    private boolean isAccessible(int x, int y) {
-        return !((x < 2 || x > 4) && (y < 2 || y > 4));
-    }
-
-
-    // methods to add the neighbors into the cell neighbors list
+    // since the board isn't a square and some cells have diagonal neighbors,
+    // we initialise a list of neighbors for each cell
     private void initNeighbors() {
-        int[][] orthogonal = {{-1,0},{1,0},{0,-1},{0,1}};
-        int[][] diagonal   = {{-1,-1},{1,-1},{-1,1},{1,1}};
+        int[][] orthogonal = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        int[][] diagonal   = {{-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
 
         for (int y = 0; y < 7; y++) {
             for (int x = 0; x < 7; x++) {
@@ -121,6 +108,7 @@ public class Board extends ContainerElement {
         }
     }
 
+    // when call by initNeigbors, add the neigbors of each cells in there list of neighbors
     private void addNeighbors(Cell c, int x, int y, int[][] directions) {
         for (int[] d : directions) {
             int nx = x + d[0];
