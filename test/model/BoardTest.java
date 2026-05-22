@@ -89,4 +89,52 @@ public class BoardTest {
         assertTrue(center.getNeighbors().contains(left),  "Voisin de gauche manquant");
         assertTrue(center.getNeighbors().contains(right), "Voisin de droite manquant");
     }
+
+    // Tests sur les voisins en diagonal
+
+    /**
+     * Vérifie qu'une case "paire" (dont la somme ligne+colonne est paire)
+     * possède bien des voisins diagonaux.
+     *
+     *seules les cases dont (row + col) est pair
+     * ont des connexions diagonales, ce qui permet certains mouvements
+     */
+    @Test
+    void diagonalNeighborOnEvenCell() {
+        Cell c    = board.getCell(2, 2);  // (2+2)%2 == 0 → case paire
+        Cell diag = board.getCell(3, 3);  // voisin en diagonale bas-droite
+        assertTrue(c.getNeighbors().contains(diag),
+                "La case paire (2,2) doit avoir (3,3) comme voisin diagonal");
+    }
+
+    /**
+     * Vérifie qu'une case "impaire" (dont la somme ligne+colonne est impaire)
+     * N'a PAS de voisins diagonaux.
+     *
+     *Les cases impaires sont reliées uniquement en orthogonal.
+     */
+    @Test
+    void noDiagonalNeighborOnOddCell() {
+        Cell c    = board.getCell(2, 3);  // (2+3)%2 == 1 → case impaire
+        Cell diag = board.getCell(3, 4);  // case en diagonale bas-droite
+        assertFalse(c.getNeighbors().contains(diag),
+                "La case impaire (2,3) ne doit PAS avoir (3,4) comme voisin diagonal");
+    }
+
+
+    // Test sur les cases inaccessibles
+
+    /**
+     * Vérifie qu'une case inaccessible (un coin) n'a aucun voisin.
+     *
+     * Les cases hors du terrain de jeu ne doivent pas être reliées
+     * au reste du plateau : leur liste de voisins doit être vide.
+     */
+    @Test
+    void inaccessibleCellHasNoNeighbors() {
+        Cell corner = board.getCell(0, 0);  // coin supérieur gauche, inaccessible
+        assertTrue(corner.getNeighbors().isEmpty(),
+                "Une case inaccessible ne doit avoir aucun voisin");
+    }
+
 }
