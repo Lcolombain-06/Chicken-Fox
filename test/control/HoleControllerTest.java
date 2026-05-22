@@ -44,4 +44,25 @@ public class HoleControllerTest {
     }
 
 
+    // Méthodes de bases
+
+    /**
+     * Appelle la méthode private foxPlay(String line) du contrôleur.
+     */
+    private boolean callFoxPlay(String line) throws Exception {
+        Method m = HoleController.class.getDeclaredMethod("foxPlay", String.class);
+        m.setAccessible(true);
+        return (boolean) m.invoke(controller, line);
+    }
+
+    /**
+     * Appelle la méthode privée geesePlay(String line) du contrôleur.
+     * @return true si le coup est valide, false sinon.
+     */
+    private boolean callGeesePlay(String line) throws Exception {
+        Method m = HoleController.class.getDeclaredMethod("geesePlay", String.class);
+        m.setAccessible(true);
+        return (boolean) m.invoke(controller, line);
+    }
+
 }
