@@ -252,7 +252,7 @@ public class HoleController extends Controller {
     }
 
 
-    private int partyWinned (int row, int col) {
+    protected int partyWinned (int row, int col) {
         // 0 = no one | 1 = Fox | 2 = Geese
         int whoWon = 0;
 
