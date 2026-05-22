@@ -26,7 +26,7 @@ public class BoardLook extends ContainerLook {
     }
 
     private void renderCell(int row, int col) {
-        Cell cell = board.getCell(row, col);
+        Cell cell = board.getCell(col, row);
         if (!cell.isAccessible()) return;
 
         int centerY = row * rowHeight + 1;
@@ -41,8 +41,8 @@ public class BoardLook extends ContainerLook {
     }
 
     private void renderNeighborLink(int cy, int cx, Cell neighbor, int row, int col) {
-        int dRow = neighbor.getX() - row;
-        int dCol = neighbor.getY() - col;
+        int dRow = neighbor.getY() - row;
+        int dCol = neighbor.getX() - col;
 
         if      (dRow == -1 && dCol ==  0) shape[cy - 1][cx]     = "|";
         else if (dRow ==  0 && dCol ==  1) { shape[cy][cx + 1] = "-"; shape[cy][cx + 2] = "-"; }
