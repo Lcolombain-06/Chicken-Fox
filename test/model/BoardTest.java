@@ -37,4 +37,56 @@ public class BoardTest {
     void setUp() {
         board = new Board(0, 0, new StubStageModel())
     }
+
+    // Tests sur l'accessibilité des cases
+    /**
+     * Vérifie que les quatre coins du plateau (et les cases autour)
+     * sont bien marqués comme inaccessibles.**/
+    @Test
+    void cornerCellsAreNotAccessible() {
+        // Coins du plateau 7x7 : (row=0,col=0), (row=0,col=1), (row=1,col=0), (row=6,col=6)
+        // Rappel : getCell(row, col) → on passe row en premier, col en second
+        assertFalse(board.getCell(0, 0).isAccessible(), "Le coin (0,0) ne doit pas être accessible");
+        assertFalse(board.getCell(0, 1).isAccessible(), "Le coin (0,1) ne doit pas être accessible");
+        assertFalse(board.getCell(1, 0).isAccessible(), "Le coin (1,0) ne doit pas être accessible");
+        assertFalse(board.getCell(6, 6).isAccessible(), "Le coin (6,6) ne doit pas être accessible");
+    }
+
+    /**
+     * Vérifie que la case cau centre du plateau
+     * est accessible.
+     * La case (3,3)
+     */
+    @Test
+    void centerCellIsAccessible() {
+        assertTrue(board.getCell(3, 3).isAccessible(), "La case centrale (3,3) doit être accessible");
+    }
+
+
+     // Vérifie que les cases du bras supérieur de la croix sont accessibles.
+    @Test
+    void crossCellsAreAccessible() {
+        assertTrue(board.getCell(0, 2).isAccessible(), "La case (0,2) du bras supérieur doit être accessible");
+        assertTrue(board.getCell(0, 3).isAccessible(), "La case (0,3) du bras supérieur doit être accessible");
+        assertTrue(board.getCell(0, 4).isAccessible(), "La case (0,4) du bras supérieur doit être accessible");
+    }
+
+    // Tests sur les voisins
+    /**
+     * Vérifie que la case centrale connaît ses voisins
+     * : haut, bas, gauche, droite.
+     */
+    @Test
+    void orthogonalNeighborsExist() {
+        Cell center = board.getCell(3, 3);
+        Cell up    = board.getCell(2, 3);  // une rangée au-dessus
+        Cell down  = board.getCell(4, 3);  // une rangée en-dessous
+        Cell left  = board.getCell(3, 2);  // une colonne à gauche
+        Cell right = board.getCell(3, 4);  // une colonne à droite
+
+        assertTrue(center.getNeighbors().contains(up),    "Voisin du haut manquant");
+        assertTrue(center.getNeighbors().contains(down),  "Voisin du bas manquant");
+        assertTrue(center.getNeighbors().contains(left),  "Voisin de gauche manquant");
+        assertTrue(center.getNeighbors().contains(right), "Voisin de droite manquant");
+    }
 }
