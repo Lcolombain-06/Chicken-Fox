@@ -19,7 +19,7 @@ import java.util.concurrent.*;
  *
  * Defaults:
  *   nbGames          = 1000
- *   maxDurationSec   = 30      (game lasting more than this → DRAW_TIMEOUT)
+ *   maxDurationSec   = 15      (game lasting more than this → DRAW_TIMEOUT)
  *   outputFile       = "profiler_results.csv"
  *
  * CSV columns:
@@ -36,7 +36,7 @@ import java.util.concurrent.*;
 public class Profiler {
 
     private static final int    DEFAULT_NB_GAMES       = 1000;
-    private static final long   DEFAULT_MAX_DURATION_S = 30;
+    private static final long   DEFAULT_MAX_DURATION_S = 15;
     private static final String DEFAULT_OUTPUT_FILE    = "profiler_results.csv";
 
     public static void main(String[] args) {

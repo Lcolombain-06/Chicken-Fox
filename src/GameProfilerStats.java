@@ -23,18 +23,23 @@ public class GameProfilerStats {
     }
 
     public static String csvHeader() {
-        return "game_number,fox_moves,geese_moves,total_moves,duration_ms,duration_s,result";
+        return "game_number,fox_moves,geese_moves,total_moves,duration_ms,FoxWin,GeeseWin,DrawGame";
     }
 
     public String toCsvRow() {
+        int foxWin   = result == Result.FOX_WIN       ? 1 : 0;
+        int geeseWin = result == Result.GEESE_WIN     ? 1 : 0;
+        int draw     = result == Result.DRAW_TIMEOUT  ? 1 : 0;
+
         return String.join(",",
                 String.valueOf(gameNumber),
                 String.valueOf(foxMoves),
                 String.valueOf(geeseMoves),
                 String.valueOf(foxMoves + geeseMoves),
                 String.valueOf(durationMs),
-                String.format("%.3f", durationMs / 1000.0),
-                result.name()
+                String.valueOf(foxWin),
+                String.valueOf(geeseWin),
+                String.valueOf(draw)
         );
     }
 

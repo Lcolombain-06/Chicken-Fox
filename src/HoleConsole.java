@@ -54,7 +54,7 @@ public class HoleConsole {
 
 
         // 2. Enregistrement du stage
-        StageFactory.registerModelAndView("hole", "model.HoleStageModel", "view.HoleStageView");
+        StageFactory.registerModelAndView("Game", "model.HoleStageModel", "view.HoleStageView");
 
         // 3. Vue et contrôleur
         View view = new View(model);
