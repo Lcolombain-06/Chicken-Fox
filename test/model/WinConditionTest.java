@@ -21,7 +21,7 @@ public class WinCondition {
                 Cell cell = board.getCell(row, col);
                 if (!cell.isAccessible()) continue;
 
-                //A FINIR PAS TOUCHE
+                //A FINIR PAS TOUCHE !!
             }
         }
         return count;
