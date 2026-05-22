@@ -31,5 +31,18 @@ public class WinCondition {
     public static boolean foxWins(Board board) {
         return countChickens(board) < MIN_CHICKENS_TO_BLOCK;
     }
+    /**
+     * Condition de victoire des poules
+     * Les poules gagnent quand le renard est bloqué :
+     * aucune de ses cases voisines n'est libre ET il ne peut faire
+     * aucun saut (toutes les cases autour sont occupées ou pas utilisable).
+     *
+     * on utilise la méthode countPossibleFoxMoves() du plateau,
+     * calcule combien de mouvements ils restent au renard.**/
 
+    public static boolean chickensWin(Board board, Pawn fox) {
+        // On donne au plateau le calcul du nombre de mouvements possibles du renard.
+        // Si ce nombre est 0, le renard est totalement bloqué → les poules gagnent.
+        return board.countPossibleFoxMoves() == 0;
+    }
 }
