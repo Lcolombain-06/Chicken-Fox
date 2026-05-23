@@ -63,7 +63,7 @@ public class HoleControllerTest {
         Method m = HoleController.class.getDeclaredMethod("geesePlay", String.class);
         m.setAccessible(true);
         return (boolean) m.invoke(controller, line);
-    }
+    }C()
     //PLUS A FAIRE
 
 }
