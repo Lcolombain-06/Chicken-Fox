@@ -122,7 +122,7 @@ public class BoardTest {
     }
 
 
-    // Test sur les cases inaccessibles
+    // Test sur les cases inaccessibles blaaaaaaaaa
 
     /**
      * Vérifie qu'une case inaccessible (un coin) n'a aucun voisin.
