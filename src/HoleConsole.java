@@ -10,119 +10,173 @@ public class HoleConsole {
 
 
     public static void main(String[] args) {
-        String player = "Player";
-        String bot = "(bot)";
-
-        // 1. Modèle global
         Model model = new Model();
+        String inputFile = null;
 
-        if (args.length >= 1 && args.length < 3) {
-            int nbrplayer = Integer.parseInt(args[0]);
-            int whoIsFox = 1;
+        if (args.length == 0) {
+            inputFile = playerSelection(model);
 
-            if (args.length == 2) {
-                whoIsFox = Integer.parseInt(args[1]);
+        } else {
+            int nbPlayers;
+            try {
+                nbPlayers = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+                printUsage();
+                return;
             }
 
-            if (nbrplayer == 0) {
-                model.addComputerPlayer(player + "1 " + bot);
-                model.addComputerPlayer(player + "2 " + bot);
+            if (nbPlayers < 0 || nbPlayers > 2) {
+                System.out.println("Error: the number of players must be 0, 1, or 2.");
+                printUsage();
+                return;
             }
 
-            else if (nbrplayer == 1) {
-                if (whoIsFox == 1 || whoIsFox > 2) {
-                    model.addHumanPlayer(player);
-                    model.addComputerPlayer(player + "2 " + bot);
+            if (nbPlayers == 0) {
+                // bot vs bot — pas de fichier attendu
+                model.addComputerPlayer("Player1 (bot)");
+                model.addComputerPlayer("Player2 (bot)");
+                System.out.println("bot vs bot mod selected.");
+
+            } else if (nbPlayers == 1) {
+                // 1 human : args[1] optionnel = qui joue le fox (1 ou 2)
+                int whoIsFox = 1; // par défaut l'human joue le fox
+                if (args.length >= 2) {
+                    try {
+                        whoIsFox = Integer.parseInt(args[1]);
+                    } catch (NumberFormatException e) {
+                        // args[1] n'est pas un entier → on garde la valeur par défaut
+                        System.out.println("Warning: value ignored for whoIsFox, the human plays fox.");
+                    }
                 }
 
-                else {
-                    model.addComputerPlayer(player + "1 " + bot);
-                    model.addHumanPlayer(player);
+                if (whoIsFox == 2) {
+                    model.addComputerPlayer("Player1 (bot)");
+                    model.addHumanPlayer("Player");
+                    System.out.println("Bot = fox | human = geese.");
+                } else {
+                    model.addHumanPlayer("Player");
+                    model.addComputerPlayer("Player2 (bot)");
+                    System.out.println("Human = fox | Bot = geese.");
                 }
-            }
 
-            else {
-                model.addHumanPlayer(player);
-                model.addHumanPlayer(player);
+            } else {
+                // 2 players : args[1] optionnel = fichier de coups
+                model.addHumanPlayer("Player1");
+                model.addHumanPlayer("Player2");
+                System.out.println("Human vs Human mod selected.");
+
+                if (args.length >= 2) {
+                    // Vérifie que ce n'est pas un nombre (mauvais argument)
+                    if (!args[1].matches("\\d+")) {
+                        inputFile = args[1];
+                    } else {
+                        System.out.println("Warning : argument \"" + args[1] + "\" ignored (expected: file name).");
+                    }
+                }
             }
         }
 
-        else {
-            playerSelection(model);
-            System.out.println();
-        }
-
-
-        // 2. Enregistrement du stage
         StageFactory.registerModelAndView("Game", "model.HoleStageModel", "view.HoleStageView");
 
-        // 3. Vue et contrôleur
         View view = new View(model);
         HoleController control = new HoleController(model, view);
-        control.setFirstStageName("hole");
+        control.setFirstStageName("Game");
 
-        // 4. Lancement du jeu
+        // load input file if gave
+        if (inputFile != null) {
+            control.setInputFile(inputFile);
+        }
+
         try {
-            control.startGame();   // initialise le stage + appelle la factory
-            control.stageLoop();   // boucle de jeu
+            control.startGame();
+            control.stageLoop();
         } catch (Exception e) {
-            System.out.println("Erreur lors du lancement du jeu : " + e.getMessage());
+            System.out.println("Error during game launch : " + e.getMessage());
         }
     }
 
 
 
-    private static void playerSelection(Model model) {
-        String player = "Player";
-        String bot = "(bot)";
+    private static String playerSelection(Model model) {
+        String inputFile = null;
 
         titlePrint();
         System.out.println("\n");
-        System.out.println("Welcome in geese and fox!");
-        System.out.print("Select the number of human player: ");
-        int nbrplayer = input.nextInt();
-        input.nextLine();
+        System.out.println("Welcome in Geese & Fox !");
+        System.out.print("Number of human player (0 / 1 / 2) : ");
+        int nbPlayers;
+        try {
+            nbPlayers = Integer.parseInt(input.nextLine().trim());
+        } catch (NumberFormatException e) {
+            nbPlayers = 2; // valeur par défaut
+        }
         System.out.println();
 
-        if (nbrplayer == 0) {
-            model.addComputerPlayer(player + "1 " + bot);
-            model.addComputerPlayer(player + "2 " + bot);
-            System.out.println("Bot-only mod selected!");
-        }
+        if (nbPlayers <= 0) {
+            model.addComputerPlayer("Player1 (bot)");
+            model.addComputerPlayer("Player2 (bot)");
+            System.out.println("bot vs bot mod selected !");
 
-        else if (nbrplayer == 1) {
-            System.out.println("Bot-human mod selected!");
-            System.out.print("Who will play the fox (1 = player; 2 = bot): ");
-            int whoIsFox = input.nextInt();
-            input.nextLine();
+        } else if (nbPlayers == 1) {
+            System.out.print("Who play the fox ? (1 = human, 2 = bot) : ");
+            int whoIsFox;
+            try {
+                whoIsFox = Integer.parseInt(input.nextLine().trim());
+            } catch (NumberFormatException e) {
+                whoIsFox = 1;
+            }
 
-            System.out.print("\nPlayer, choose your name: ");
-            player = input.nextLine();
+            System.out.print("\nYour name : ");
+            String playerName = input.nextLine().trim();
+            if (playerName.isEmpty()) playerName = "Player";
             System.out.println();
 
-            if (whoIsFox == 1 || whoIsFox > 2) {
-                model.addHumanPlayer(player);
-                model.addComputerPlayer("Player2 " + bot);
-                System.out.println("Player will be the fox!");
+            if (whoIsFox == 2) {
+                model.addComputerPlayer("Player1 (bot)");
+                model.addHumanPlayer(playerName);
+                System.out.println("Bot = fox | " + playerName + " = geese.");
             } else {
-                model.addComputerPlayer("Player1 " + bot);
-                model.addHumanPlayer(player);
-                System.out.println("bot will be the fox!");
+                model.addHumanPlayer(playerName);
+                model.addComputerPlayer("Player2 (bot)");
+                System.out.println(playerName + " = fox | Bot = geese.");
+            }
+
+        } else {
+            System.out.print("Player 1 name (fox) : ");
+            String p1 = input.nextLine().trim();
+            if (p1.isEmpty()) p1 = "Player1";
+
+            System.out.print("Player 2 name (geese) : ");
+            String p2 = input.nextLine().trim();
+            if (p2.isEmpty()) p2 = "Player2";
+
+            model.addHumanPlayer(p1);
+            model.addHumanPlayer(p2);
+            System.out.println("human vs human mod selected !");
+
+            System.out.print("\nInput file to play ? (Enter to ignore) : ");
+            String file = input.nextLine().trim();
+            if (!file.isEmpty()) {
+                inputFile = file;
             }
         }
 
-        else {
-            System.out.print("\nPlayer1, choose your name: ");
-            player = input.nextLine();
-            System.out.println();
-            model.addHumanPlayer(player);
+        return inputFile;
+    }
 
-            System.out.print("\nPlayer2, choose your name: ");
-            player = input.nextLine();
-            System.out.println();
-            model.addHumanPlayer(player);
-            System.out.println("Human VS Human mode selected!");
-        }
+    private static void printUsage() {
+        System.out.println();
+        System.out.println("Usage :");
+        System.out.println("  java HoleConsole                   → interactive menu");
+        System.out.println("  java HoleConsole 0                 → bot vs bot");
+        System.out.println("  java HoleConsole 1 [1|2]           → 1 human (1=fox, 2=geese)");
+        System.out.println("  java HoleConsole 2                 → human vs human");
+        System.out.println("  java HoleConsole 2 entree.txt      → human vs human + input file");
+        System.out.println();
+        System.out.println("input file format :");
+        System.out.println("  Blank lines and lines starting with # are ignored.");
+        System.out.println("  Fox input : 2 characters, e.g. C3");
+        System.out.println("  Geese input : 4 characters, e.g. E2D2");
     }
 
     private static void titlePrint() {

@@ -10,6 +10,7 @@ import model.Board;
 import model.HoleStageModel;
 import model.Pawn;
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -19,9 +20,50 @@ public class HoleController extends Controller {
     BufferedReader consoleIn;
     boolean firstPlayer;
 
+    // attribute for when using an input file
+    BufferedReader fileIn;
+    boolean fileExhausted;
+
     public HoleController(Model model, View view) {
         super(model, view);
         firstPlayer = true;
+    }
+
+    /**
+     * Charge un fichier de coups à rejouer.
+     * Si le fichier est introuvable, on continue en mode saisie manuelle.
+     */
+    public void setInputFile(String path) {
+        try {
+            fileIn = new BufferedReader(new FileReader(path));
+            System.out.println("Input file loaded : " + path);
+        } catch (IOException e) {
+            System.out.println("Can't open the file \"" + path + "\" : " + e.getMessage());
+            System.out.println("The party resume in manual mod.");
+            fileIn = null;
+        }
+    }
+
+    /**
+     * Lit la prochaine ligne de saisie.
+     * Priorité au fichier ; bascule sur la console quand le fichier est épuisé.
+     */
+    private String readLine() throws IOException {
+        if (fileIn != null && !fileExhausted) {
+            String line;
+            // On saute les lignes vides et les commentaires (#)
+            while ((line = fileIn.readLine()) != null) {
+                line = line.trim();
+                if (!line.isEmpty() && !line.startsWith("#")) {
+                    System.out.println("(file) > " + line);
+                    return line;
+                }
+            }
+            // when the file is ended before the end of the game
+            fileExhausted = true;
+            System.out.println("--- end of file, game resume in manual mod ---");
+        }
+        return consoleIn.readLine();
     }
 
     /**
@@ -96,7 +138,7 @@ public class HoleController extends Controller {
             while (!ok) {
                 System.out.print(p.getName() + " > ");
                 try {
-                    String line = consoleIn.readLine();
+                    String line = readLine();
                     if (line.length() == 4 || line.length() == 2) {
                         ok = analyseAndPlay(line);
                     }

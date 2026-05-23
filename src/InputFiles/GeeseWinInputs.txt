@@ -1,0 +1,16 @@
+# This is the inputs in the case the geese win in the most efficiant way (only 4 geese needed)
+# This file show a win patern, but doesn't represent a logical game at all
+C3
+E1D1
+D2
+D1C1
+D1
+E3D3
+E1
+E4E3
+D1
+D3D2
+E1
+E3D3
+D1
+E2E1
