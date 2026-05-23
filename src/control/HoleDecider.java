@@ -7,13 +7,20 @@ import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
 import model.*;
-
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Implementation of the automated tactical decision-making engine for the Fox.
+ * <p>
+ *     This class uses a score evaluation to analyze and select the mathematically
+ *     optimal tactical move based on the board constraints at this point in the game.
+ * </p>
+ * * @author Lili Colombain
+ */
 public class HoleDecider extends Decider {
 
     private static final Random loto = new Random(Calendar.getInstance().getTimeInMillis());
@@ -25,7 +32,11 @@ public class HoleDecider extends Decider {
         super(model, control);
     }
 
-
+    /**
+     * Evaluates all legally available transitions for the Fox and retains the optimal branch
+     *
+     * @return An integer array containing the optimal target coordinates representing [row, col]
+     */
     public int[] chooseBestMove() {
 
         HoleStageModel stage = (HoleStageModel) model.getGameStage();
@@ -78,6 +89,7 @@ public class HoleDecider extends Decider {
         }
         return bestMove;
     }
+
 
     private int scoreMove(Pawn fox, int fromR, int fromC, int toR, int toC, Board board, HoleStageModel stage) {
         int score = 0;

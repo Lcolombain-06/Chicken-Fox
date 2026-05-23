@@ -79,7 +79,7 @@ public class HoleController extends Controller {
 
             ActionList actions;
             if (model.getIdPlayer() == 0) {
-                HoleDecider decider = new HoleDecider(model, this);
+                HoleDecider decider = new HoleDecider(model, this); // choix de la stratégie
                 actions = decider.decide();
             } else {
                 GooseDecider decider = new GooseDecider(model, this);

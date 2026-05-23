@@ -11,12 +11,28 @@ import model.Cell;
 import model.HoleStageModel;
 import model.Pawn;
 
+/**
+ * Implementation of the automated tactical decision-making engine for the Geese.
+ * <p>
+ *     This class uses a score evaluation to analyze and select the mathematically
+ *     optimal tactical move based on the board constraints at this point in the game.
+ * </p>
+ * * @author Tié Rachida Hébie
+ */
 public class GooseDecider extends Decider {
 
     public GooseDecider(Model model, Controller control) {
         super(model, control);
     }
 
+    /**
+     * Scans the form structure of the grid and return the optimal action sequence.
+     * <p>
+     *     The loop looks ahead by 1 turn to compute dynamic scores for every valid destination
+     *     and retain the highest score
+     * </p>
+     * @return an ActionList containing the list of chosen parameters
+     */
     @Override
     public ActionList decide() {
         HoleStageModel stage = (HoleStageModel) model.getGameStage();
@@ -70,7 +86,7 @@ public class GooseDecider extends Decider {
         board.clearValidCells();
 
         if (bestPawn == null) {
-            System.out.println("GEESE BOT HAS NO VALID MOVES");
+            System.out.println("CRITICAL: GEESE BOT HAS NO VALID MOVES AVAILABLE");
             ActionList empty = new ActionList();
             empty.setDoEndOfTurn(true);
             return empty;
@@ -81,6 +97,17 @@ public class GooseDecider extends Decider {
         return actions;
     }
 
+    /**
+     * Evaluate the score of a destination on the board and returns its score
+     * @param board The grid model instance
+     * @param foxRow current row index of the fox
+     * @param foxCol current col index of the fox
+     * @param origRow initial row index of the Goose
+     * @param origCol initial col index of the Goose
+     * @param simRow target destination row index under evaluation
+     * @param simCol target destination column index under evaluation
+     * @return a score that represent the mathematical utility value of the move
+     */
     private int evaluateGooseMove(Board board, int foxRow, int foxCol, int origRow, int origCol, int simRow, int simCol) {
 
         int score = 0;
