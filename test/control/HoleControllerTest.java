@@ -371,5 +371,6 @@ public class HoleControllerTest {
         int at3 = callPartyWinned(3, 3);
         assertEquals(1, at3,
                 "À 3 poules restantes, le renard doit gagner (3 < 4)");
+        // ok
     }
 }
