@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class HoleControllerTest {
 
     // ---------------------------------------------------------------
-    // Infrastructure commune à tous les tests aaaaaaa
+    // Infrastructure commune à tous les tests
     // ---------------------------------------------------------------
 
     private Model          model;
