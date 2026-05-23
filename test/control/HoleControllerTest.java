@@ -1,4 +1,4 @@
-package test;
+package control;
 
 import boardifier.model.Model;
 import control.HoleController;
@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class HoleControllerTest {
 
     // ---------------------------------------------------------------
-    // Infrastructure commune à tous les tests
+    // Infrastructure commune à tous les tests aaaaaaa
     // ---------------------------------------------------------------
 
     private Model          model;
