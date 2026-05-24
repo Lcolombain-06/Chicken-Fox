@@ -309,7 +309,7 @@ public class HoleControllerTest {
         assertEquals(
                 0,
                 result,
-                "Le renard possède encore une case libre"
+                "Le renard possède encore une case libre."
         );
     }
 
