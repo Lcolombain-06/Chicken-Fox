@@ -365,16 +365,6 @@ class GooseDeciderTest {
     @DisplayName("Unit: evaluateGooseMove scoring")
     class EvaluateGooseMoveTests {
 
-        // FIX: removed @BeforeEach that was registering a catch-all stub
-        // when(board.getCell(anyInt(), anyInt())).thenReturn(foxCell)
-        // That generic stub was overriding the specific stubs set up inside
-        // each test, causing neighbors/jump cells to always return an empty
-        // cell instead of the configured one.
-        //
-        // Each test now sets up board.getCell(...) stubs independently,
-        // which is the only safe approach when different tests need
-        // different behaviour for the same method.
-
         private int score(int foxRow, int foxCol,
                           int origRow, int origCol,
                           int simRow, int simCol) throws Exception {
