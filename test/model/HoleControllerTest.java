@@ -366,7 +366,7 @@ public class HoleControllerTest {
     }
 
     // ---------------------------------------------------
-    // Tests sur le compteur des poules
+    // Tests sur le compteur des poulesss
     // ---------------------------------------------------
 
     @Test
