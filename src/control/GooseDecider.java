@@ -134,6 +134,7 @@ public class GooseDecider extends Decider {
         Cell simCell = board.getCell(simCol, simRow);
         int gooseNeighbors = 0;
 
+
         for (Cell neighbor : simCell.getNeighbors()) {
             int nx = neighbor.getX();
             int ny = neighbor.getY();

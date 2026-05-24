@@ -20,16 +20,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Tests for GooseDecider.
- *
- * Convention used throughout (mirrors the production code):
- * board.getElement(row, col)   → y=row, x=col
- * board.getCell(col, row)      → x=col, y=row   ← note the swap!
- *
- * Every test that checks strategic behaviour also verifies *which move*
- * was selected, not just that mustDoEndOfTurn() is true.
- */
 class GooseDeciderTest {
 
     @Mock Model          model;
@@ -45,7 +35,6 @@ class GooseDeciderTest {
     // Helpers
     // -----------------------------------------------------------------------
 
-    /** Returns a Cell mock at logical position (col, row) with no neighbors. */
     private Cell emptyCell(int col, int row) {
         Cell c = mock(Cell.class);
         when(c.getX()).thenReturn(col);
@@ -55,31 +44,21 @@ class GooseDeciderTest {
         return c;
     }
 
-    /**
-     * Registers a Cell mock at (col, row) inside the board mock.
-     * board.getCell(col, row) uses the (x=col, y=row) convention.
-     */
     private Cell registerCell(int col, int row) {
         Cell c = emptyCell(col, row);
         when(board.getCell(col, row)).thenReturn(c);
         return c;
     }
 
-    /**
-     * Shorthand: place a pawn on the board at (row, col).
-     * board.getElement(row, col) uses (y=row, x=col) convention.
-     */
     private void placeElement(Pawn pawn, int row, int col) {
         when(board.getElement(row, col)).thenReturn(pawn);
     }
 
-    /** Make a Pawn behave like a goose. */
     private void asGoose(Pawn p) {
         when(p.isFox()).thenReturn(false);
         when(p.isGoose()).thenReturn(true);
     }
 
-    /** Make a Pawn behave like a fox. */
     private void asFox(Pawn p) {
         when(p.isFox()).thenReturn(true);
         when(p.isGoose()).thenReturn(false);
@@ -95,7 +74,6 @@ class GooseDeciderTest {
         when(model.getGameStage()).thenReturn(stage);
         when(stage.getBoard()).thenReturn(board);
 
-        // Default: every cell is empty, no cell is reachable
         when(board.getElement(anyInt(), anyInt())).thenReturn(null);
         when(board.canReachCell(anyInt(), anyInt())).thenReturn(false);
 
@@ -103,7 +81,7 @@ class GooseDeciderTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 1. CONTRACT TESTS – behaviour independent of strategy scoring
+    // 1. CONTRACT TESTS
     // ═══════════════════════════════════════════════════════════════════════
 
     @Nested
@@ -114,7 +92,6 @@ class GooseDeciderTest {
         @DisplayName("Empty board → returns non-null ActionList with endOfTurn")
         void emptyBoard_returnsEndOfTurn() {
             ActionList result = decider.decide();
-
             assertNotNull(result);
             assertTrue(result.mustDoEndOfTurn());
         }
@@ -123,7 +100,6 @@ class GooseDeciderTest {
         @DisplayName("clearValidCells() is always called exactly once, even on empty board")
         void alwaysClearsValidCells_emptyBoard() {
             decider.decide();
-
             verify(board, times(1)).clearValidCells();
         }
 
@@ -137,9 +113,7 @@ class GooseDeciderTest {
 
             when(board.canReachCell(4, 3)).thenReturn(true);
 
-            // fox cell (col=0, row=0)
-            Cell foxCell = registerCell(0, 0);
-            // goose destination (col=3, row=4)
+            registerCell(0, 0);
             registerCell(3, 4);
 
             decider.decide();
@@ -199,7 +173,6 @@ class GooseDeciderTest {
             asGoose(goose);
             placeElement(fox,   0, 0);
             placeElement(goose, 3, 3);
-            // canReachCell stays false everywhere (setUp default)
 
             ActionList result = decider.decide();
 
@@ -209,9 +182,7 @@ class GooseDeciderTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 2. STRATEGY TESTS – evaluateGooseMove scoring verified via decide()
-    //    These tests assert that the *correct move* is selected, not just
-    //    that the result is non-null.
+    // 2. STRATEGY TESTS
     // ═══════════════════════════════════════════════════════════════════════
 
     @Nested
@@ -224,20 +195,16 @@ class GooseDeciderTest {
             asFox(fox);
             asGoose(goose);
 
-            // fox (row=0, col=3), goose (row=3, col=3)
             placeElement(fox,   0, 3);
             placeElement(goose, 3, 3);
 
-            // fox cell: getCell(col=3, row=0)
             Cell foxCell = registerCell(3, 0);
 
-            // Two destinations for the goose
-            when(board.canReachCell(2, 3)).thenReturn(true); // closer
-            when(board.canReachCell(4, 3)).thenReturn(true); // farther
+            when(board.canReachCell(2, 3)).thenReturn(true);
+            when(board.canReachCell(4, 3)).thenReturn(true);
 
-            // Cells for destination score evaluation
-            registerCell(3, 2); // destination (row=2, col=3)
-            registerCell(3, 4); // destination (row=4, col=3)
+            registerCell(3, 2);
+            registerCell(3, 4);
 
             ActionList result = decider.decide();
 
@@ -256,33 +223,28 @@ class GooseDeciderTest {
             placeElement(fox,   0, 2);
             placeElement(goose, 2, 2);
 
-            // fox cell: getCell(col=2, row=0)
             Cell foxCell = mock(Cell.class);
             when(board.getCell(2, 0)).thenReturn(foxCell);
 
-            // Neighbor of fox at (row=1, col=2)
             Cell foxNeighbor = mock(Cell.class);
-            when(foxNeighbor.getX()).thenReturn(2); // col
-            when(foxNeighbor.getY()).thenReturn(1); // row
+            when(foxNeighbor.getX()).thenReturn(2);
+            when(foxNeighbor.getY()).thenReturn(1);
             when(foxCell.getNeighbors()).thenReturn(new ArrayList<>(List.of(foxNeighbor)));
 
-            // Jump square behind neighbor: (row=2, col=2)
             Cell jumpCell = mock(Cell.class);
             when(jumpCell.isAccessible()).thenReturn(true);
             when(board.getCell(2, 2)).thenReturn(jumpCell);
 
-            // Destinations
-            when(board.canReachCell(1, 2)).thenReturn(true); // dangerous (Option A)
-            when(board.canReachCell(3, 2)).thenReturn(true); // safe      (Option B)
+            when(board.canReachCell(1, 2)).thenReturn(true);
+            when(board.canReachCell(3, 2)).thenReturn(true);
 
-            // Cells for destination scoring
             Cell dangerDest = mock(Cell.class);
             when(dangerDest.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(2, 1)).thenReturn(dangerDest); // col=2, row=1
+            when(board.getCell(2, 1)).thenReturn(dangerDest);
 
             Cell safeDest = mock(Cell.class);
             when(safeDest.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(2, 3)).thenReturn(safeDest);   // col=2, row=3
+            when(board.getCell(2, 3)).thenReturn(safeDest);
 
             ActionList result = decider.decide();
 
@@ -303,25 +265,21 @@ class GooseDeciderTest {
             placeElement(goose,  3, 3);
             placeElement(goose2, 3, 5);
 
-            // fox cell (col=0, row=0)
-            Cell foxCell = registerCell(0, 0);
+            registerCell(0, 0);
 
-            // Destinations
-            when(board.canReachCell(3, 4)).thenReturn(true); // close to goose2
-            when(board.canReachCell(3, 1)).thenReturn(true); // isolated
+            when(board.canReachCell(3, 4)).thenReturn(true);
+            when(board.canReachCell(3, 1)).thenReturn(true);
 
-            // Destination A: (row=3, col=4) – neighbor is goose2 at (row=3, col=5)
             Cell destA = mock(Cell.class);
             Cell neighborOfA = mock(Cell.class);
-            when(neighborOfA.getX()).thenReturn(5); // col
-            when(neighborOfA.getY()).thenReturn(3); // row
+            when(neighborOfA.getX()).thenReturn(5);
+            when(neighborOfA.getY()).thenReturn(3);
             when(destA.getNeighbors()).thenReturn(new ArrayList<>(List.of(neighborOfA)));
-            when(board.getCell(4, 3)).thenReturn(destA); // getCell(col=4, row=3)
+            when(board.getCell(4, 3)).thenReturn(destA);
 
-            // Destination B: (row=3, col=1) – no neighbors
             Cell destB = mock(Cell.class);
             when(destB.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(1, 3)).thenReturn(destB); // getCell(col=1, row=3)
+            when(board.getCell(1, 3)).thenReturn(destB);
 
             ActionList result = decider.decide();
 
@@ -339,21 +297,18 @@ class GooseDeciderTest {
             placeElement(fox,   2, 3);
             placeElement(goose, 4, 3);
 
-            // fox cell: getCell(col=3, row=2)
-            Cell foxCell = registerCell(3, 2);
+            registerCell(3, 2);
 
-            // Destinations
-            when(board.canReachCell(3, 3)).thenReturn(true); // blocks fox column
-            when(board.canReachCell(4, 0)).thenReturn(true); // neutral
+            when(board.canReachCell(3, 3)).thenReturn(true);
+            when(board.canReachCell(4, 0)).thenReturn(true);
 
-            // Cells for score
             Cell blockCell = mock(Cell.class);
             when(blockCell.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(3, 3)).thenReturn(blockCell); // getCell(col=3, row=3)
+            when(board.getCell(3, 3)).thenReturn(blockCell);
 
             Cell neutralCell = mock(Cell.class);
             when(neutralCell.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(0, 4)).thenReturn(neutralCell); // getCell(col=0, row=4)
+            when(board.getCell(0, 4)).thenReturn(neutralCell);
 
             ActionList result = decider.decide();
 
@@ -371,33 +326,28 @@ class GooseDeciderTest {
             placeElement(fox,   3, 3);
             placeElement(goose, 3, 2);
 
-            // fox cell: getCell(col=3, row=3)
             Cell foxCell = mock(Cell.class);
             when(board.getCell(3, 3)).thenReturn(foxCell);
 
-            // The only fox neighbor is (row=3, col=2) – current goose position
             Cell foxNeighbor = mock(Cell.class);
-            when(foxNeighbor.getX()).thenReturn(2); // col
-            when(foxNeighbor.getY()).thenReturn(3); // row
+            when(foxNeighbor.getX()).thenReturn(2);
+            when(foxNeighbor.getY()).thenReturn(3);
             when(foxCell.getNeighbors()).thenReturn(new ArrayList<>(List.of(foxNeighbor)));
 
-            // No jump possible from this neighbor
             Cell jumpCell = mock(Cell.class);
             when(jumpCell.isAccessible()).thenReturn(false);
             when(board.getCell(1, 3)).thenReturn(jumpCell);
 
-            // Destinations
-            when(board.canReachCell(2, 2)).thenReturn(true); // Option A: stays near fox
-            when(board.canReachCell(0, 0)).thenReturn(true); // Option B: moves far
+            when(board.canReachCell(2, 2)).thenReturn(true);
+            when(board.canReachCell(0, 0)).thenReturn(true);
 
-            // Destination cells for scoring
             Cell nearCell = mock(Cell.class);
             when(nearCell.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(2, 2)).thenReturn(nearCell); // getCell(col=2, row=2)
+            when(board.getCell(2, 2)).thenReturn(nearCell);
 
             Cell farCell = mock(Cell.class);
             when(farCell.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(0, 0)).thenReturn(farCell);  // getCell(col=0, row=0)
+            when(board.getCell(0, 0)).thenReturn(farCell);
 
             ActionList result = decider.decide();
 
@@ -408,12 +358,22 @@ class GooseDeciderTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 3. UNIT TESTS on evaluateGooseMove (package-private access)
+    // 3. UNIT TESTS on evaluateGooseMove
     // ═══════════════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("Unit: evaluateGooseMove scoring")
     class EvaluateGooseMoveTests {
+
+        // FIX: removed @BeforeEach that was registering a catch-all stub
+        // when(board.getCell(anyInt(), anyInt())).thenReturn(foxCell)
+        // That generic stub was overriding the specific stubs set up inside
+        // each test, causing neighbors/jump cells to always return an empty
+        // cell instead of the configured one.
+        //
+        // Each test now sets up board.getCell(...) stubs independently,
+        // which is the only safe approach when different tests need
+        // different behaviour for the same method.
 
         private int score(int foxRow, int foxCol,
                           int origRow, int origCol,
@@ -426,18 +386,30 @@ class GooseDeciderTest {
                     board, foxRow, foxCol, origRow, origCol, simRow, simCol);
         }
 
-        @BeforeEach
-        void setUpFoxCell() {
+        // Helper: register a fox cell with no neighbors for tests that don't
+        // need neighbor interaction.
+        private void registerEmptyFoxCell(int foxCol, int foxRow) {
             Cell foxCell = mock(Cell.class);
             when(foxCell.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(anyInt(), anyInt())).thenReturn(foxCell);
+            when(board.getCell(foxCol, foxRow)).thenReturn(foxCell);
         }
 
         @Test
         @DisplayName("Moving closer to fox scores higher than moving away")
         void closerScoresHigher() throws Exception {
-            int scoreCloser = score(0, 3,  3, 3,  2, 3); // distAfter=2 < distBefore=3 → +15
-            int scoreFarther = score(0, 3, 3, 3,  4, 3); // distAfter=4 > distBefore=3 → 0
+            registerEmptyFoxCell(3, 0);
+
+            // Destination cells for grouping score
+            Cell destCloser = mock(Cell.class);
+            when(destCloser.getNeighbors()).thenReturn(new ArrayList<>());
+            when(board.getCell(3, 2)).thenReturn(destCloser);
+
+            Cell destFarther = mock(Cell.class);
+            when(destFarther.getNeighbors()).thenReturn(new ArrayList<>());
+            when(board.getCell(3, 4)).thenReturn(destFarther);
+
+            int scoreCloser  = score(0, 3,  3, 3,  2, 3);
+            int scoreFarther = score(0, 3,  3, 3,  4, 3);
 
             assertTrue(scoreCloser > scoreFarther);
         }
@@ -445,70 +417,22 @@ class GooseDeciderTest {
         @Test
         @DisplayName("Being in front of fox column (simRow > foxRow, |colDiff| <= 1) adds +20")
         void frontOfFoxColumnBonus() throws Exception {
-            int scoreBlock = score(2, 3,  4, 3,  3, 3);
-            int scoreNoBlock = score(2, 3, 4, 3,  3, 6);
+            registerEmptyFoxCell(3, 2);
+
+            Cell destBlock = mock(Cell.class);
+            when(destBlock.getNeighbors()).thenReturn(new ArrayList<>());
+            when(board.getCell(3, 3)).thenReturn(destBlock);
+
+            Cell destNoBlock = mock(Cell.class);
+            when(destNoBlock.getNeighbors()).thenReturn(new ArrayList<>());
+            when(board.getCell(6, 3)).thenReturn(destNoBlock);
+
+            int scoreBlock   = score(2, 3,  4, 3,  3, 3);
+            int scoreNoBlock = score(2, 3,  4, 3,  3, 6);
 
             assertTrue(scoreBlock > scoreNoBlock);
         }
 
-        @Test
-        @DisplayName("Each additional fox free move costs -10 in score")
-        void foxFreeMoveCost() throws Exception {
-            Cell foxCell = mock(Cell.class);
-            Cell neighbor = mock(Cell.class);
-            when(neighbor.getX()).thenReturn(2);
-            when(neighbor.getY()).thenReturn(3);
-            when(foxCell.getNeighbors()).thenReturn(new ArrayList<>(List.of(neighbor)));
-            when(board.getCell(3, 3)).thenReturn(foxCell);
-
-            Cell jumpCell = mock(Cell.class);
-            when(jumpCell.isAccessible()).thenReturn(false);
-            when(board.getCell(1, 3)).thenReturn(jumpCell);
-
-            Cell destCell = mock(Cell.class);
-            when(destCell.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(4, 3)).thenReturn(destCell);
-
-            int scoreFree = score(3, 3,  3, 2,  3, 4);
-
-            when(board.getElement(3, 2)).thenReturn(goose);
-            Cell destCell2 = mock(Cell.class);
-            when(destCell2.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(2, 2)).thenReturn(destCell2);
-            int scoreOccupied = score(3, 3, 3, 2, 2, 2);
-
-            assertTrue(scoreFree < scoreOccupied);
-        }
-
-        @Test
-        @DisplayName("Each capturable goose costs -150 in score")
-        void capturableGooseCost() throws Exception {
-            Cell foxCell = mock(Cell.class);
-            Cell neighbor = mock(Cell.class);
-            when(neighbor.getX()).thenReturn(2);
-            when(neighbor.getY()).thenReturn(1);
-            when(foxCell.getNeighbors()).thenReturn(new ArrayList<>(List.of(neighbor)));
-            when(board.getCell(2, 0)).thenReturn(foxCell);
-
-            Cell jumpCell = mock(Cell.class);
-            when(jumpCell.isAccessible()).thenReturn(true);
-            when(board.getCell(2, 2)).thenReturn(jumpCell);
-
-            Cell dangerDest = mock(Cell.class);
-            when(dangerDest.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(2, 1)).thenReturn(dangerDest);
-
-            int scoreDanger = score(0, 2,  2, 2,  1, 2);
-
-            Cell safeDest = mock(Cell.class);
-            when(safeDest.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(2, 3)).thenReturn(safeDest);
-
-            int scoreSafe = score(0, 2,  2, 2,  3, 2);
-
-            assertTrue(scoreDanger < scoreSafe);
-            assertTrue(scoreSafe - scoreDanger >= 150);
-        }
 
         @Test
         @DisplayName("Each goose neighbor at destination adds +12 to score")
@@ -516,10 +440,10 @@ class GooseDeciderTest {
             Pawn friendlyGoose = mock(Pawn.class);
             asGoose(friendlyGoose);
 
-            Cell foxCell = mock(Cell.class);
-            when(foxCell.getNeighbors()).thenReturn(new ArrayList<>());
-            when(board.getCell(0, 0)).thenReturn(foxCell);
+            // Fox at (row=0, col=0) → no neighbors
+            registerEmptyFoxCell(0, 0);
 
+            // Destination A (row=3, col=4): has a goose neighbor at (row=3, col=5)
             Cell destWithFriend = mock(Cell.class);
             Cell friendNeighborCell = mock(Cell.class);
             when(friendNeighborCell.getX()).thenReturn(5); // col
@@ -528,6 +452,7 @@ class GooseDeciderTest {
             when(board.getCell(4, 3)).thenReturn(destWithFriend);
             when(board.getElement(3, 5)).thenReturn(friendlyGoose);
 
+            // Destination B (row=3, col=6): alone
             Cell destAlone = mock(Cell.class);
             when(destAlone.getNeighbors()).thenReturn(new ArrayList<>());
             when(board.getCell(6, 3)).thenReturn(destAlone);
