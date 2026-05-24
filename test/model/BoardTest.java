@@ -25,116 +25,116 @@ public class BoardTest {
     }
 
     /**
-     * Le plateau que l'on teste, recréé avant chaque test.
+     * The board being tested, recreated before each test.
      */
     private Board board;
 
     /**
-     * Méthode appelée avant chaque test.
-     * Elle crée un plateau vide
+     * Method called before each test.
+     * It creates an empty board
      */
     @BeforeEach
     void setUp() {
         board = new Board(0, 0, new StubStageModel());
     }
 
-    // Tests sur l'accessibilité des cases
+    // Tests on cell accessibility
     /**
-     * Vérifie que les quatre coins du plateau (et les cases autour)
-     * sont bien marqués comme inaccessibles.**/
+     * Verifies that the four corners of the board (and surrounding cells)
+     * are correctly marked as inaccessible.**/
     @Test
     void cornerCellsAreNotAccessible() {
-        // Coins du plateau 7x7 : (row=0,col=0), (row=0,col=1), (row=1,col=0), (row=6,col=6)
-        // Rappel : getCell(row, col) → on passe row en premier, col en second
-        assertFalse(board.getCell(0, 0).isAccessible(), "Le coin (0,0) ne doit pas être accessible");
-        assertFalse(board.getCell(0, 1).isAccessible(), "Le coin (0,1) ne doit pas être accessible");
-        assertFalse(board.getCell(1, 0).isAccessible(), "Le coin (1,0) ne doit pas être accessible");
-        assertFalse(board.getCell(6, 6).isAccessible(), "Le coin (6,6) ne doit pas être accessible");
+        // Corners of the 7x7 board: (row=0,col=0), (row=0,col=1), (row=1,col=0), (row=6,col=6)
+        // Note: getCell(row, col) → row is passed first, col second
+        assertFalse(board.getCell(0, 0).isAccessible(), "Corner (0,0) must not be accessible");
+        assertFalse(board.getCell(0, 1).isAccessible(), "Corner (0,1) must not be accessible");
+        assertFalse(board.getCell(1, 0).isAccessible(), "Corner (1,0) must not be accessible");
+        assertFalse(board.getCell(6, 6).isAccessible(), "Corner (6,6) must not be accessible");
     }
 
     /**
-     * Vérifie que la case cau centre du plateau
-     * est accessible.
-     * La case (3,3)
+     * Verifies that the cell at the center of the board
+     * is accessible.
+     * The cell (3,3)
      */
     @Test
     void centerCellIsAccessible() {
-        assertTrue(board.getCell(3, 3).isAccessible(), "La case centrale (3,3) doit être accessible");
+        assertTrue(board.getCell(3, 3).isAccessible(), "The center cell (3,3) must be accessible");
     }
 
 
-     // Vérifie que les cases du bras supérieur de la croix sont accessibles.
+    // Verifies that the cells of the upper arm of the cross are accessible.
     @Test
     void crossCellsAreAccessible() {
-        assertTrue(board.getCell(0, 2).isAccessible(), "La case (0,2) du bras supérieur doit être accessible");
-        assertTrue(board.getCell(0, 3).isAccessible(), "La case (0,3) du bras supérieur doit être accessible");
-        assertTrue(board.getCell(0, 4).isAccessible(), "La case (0,4) du bras supérieur doit être accessible");
+        assertTrue(board.getCell(0, 2).isAccessible(), "Cell (0,2) of the upper arm must be accessible");
+        assertTrue(board.getCell(0, 3).isAccessible(), "Cell (0,3) of the upper arm must be accessible");
+        assertTrue(board.getCell(0, 4).isAccessible(), "Cell (0,4) of the upper arm must be accessible");
     }
 
-    // Tests sur les voisins
+    // Tests on neighbors
     /**
-     * Vérifie que la case centrale connaît ses voisins
-     * : haut, bas, gauche, droite.
+     * Verifies that the center cell knows its neighbors
+     * : top, bottom, left, right.
      */
     @Test
     void orthogonalNeighborsExist() {
         Cell center = board.getCell(3, 3);
-        Cell up    = board.getCell(2, 3);  // une rangée au-dessus
-        Cell down  = board.getCell(4, 3);  // une rangée en-dessous
-        Cell left  = board.getCell(3, 2);  // une colonne à gauche
-        Cell right = board.getCell(3, 4);  // une colonne à droite
+        Cell up    = board.getCell(2, 3);  // one row above
+        Cell down  = board.getCell(4, 3);  // one row below
+        Cell left  = board.getCell(3, 2);  // one column to the left
+        Cell right = board.getCell(3, 4);  // one column to the right
 
-        assertTrue(center.getNeighbors().contains(up),    "Voisin du haut manquant");
-        assertTrue(center.getNeighbors().contains(down),  "Voisin du bas manquant");
-        assertTrue(center.getNeighbors().contains(left),  "Voisin de gauche manquant");
-        assertTrue(center.getNeighbors().contains(right), "Voisin de droite manquant");
+        assertTrue(center.getNeighbors().contains(up),    "Missing top neighbor");
+        assertTrue(center.getNeighbors().contains(down),  "Missing bottom neighbor");
+        assertTrue(center.getNeighbors().contains(left),  "Missing left neighbor");
+        assertTrue(center.getNeighbors().contains(right), "Missing right neighbor");
     }
 
-    // Tests sur les voisins en diagonal
+    // Tests on neighbors en diagonal
 
     /**
-     * Vérifie qu'une case "paire" (dont la somme ligne+colonne est paire)
-     * possède bien des voisins diagonaux.
+     * Verifies that an "even" cell (whose row+column sum is even)
+     * does have diagonal neighbors.
      *
-     *seules les cases dont (row + col) est pair
-     * ont des connexions diagonales, ce qui permet certains mouvements
+     * Only cells where (row + col) is even
+     * have diagonal connections, which allows certain moves
      */
     @Test
     void diagonalNeighborOnEvenCell() {
-        Cell c    = board.getCell(2, 2);  // (2+2)%2 == 0 → case paire
-        Cell diag = board.getCell(3, 3);  // voisin en diagonale bas-droite
+        Cell c    = board.getCell(2, 2);  // (2+2)%2 == 0 → even cell
+        Cell diag = board.getCell(3, 3);  // diagonal neighbor bottom-right
         assertTrue(c.getNeighbors().contains(diag),
-                "La case paire (2,2) doit avoir (3,3) comme voisin diagonal");
+                "The even cell (2,2) must have (3,3) as a diagonal neighbor");
     }
 
     /**
-     * Vérifie qu'une case "impaire" (dont la somme ligne+colonne est impaire)
-     * N'a PAS de voisins diagonaux.
+     * Verifies that an "odd" cell (whose row+column sum is odd)
+     * does NOT have diagonal neighbors.
      *
-     *Les cases impaires sont reliées uniquement en orthogonal.
+     * Odd cells are connected only orthogonally.
      */
     @Test
     void noDiagonalNeighborOnOddCell() {
-        Cell c    = board.getCell(2, 3);  // (2+3)%2 == 1 → case impaire
-        Cell diag = board.getCell(3, 4);  // case en diagonale bas-droite
+        Cell c    = board.getCell(2, 3);  // (2+3)%2 == 1 → odd cell
+        Cell diag = board.getCell(3, 4);  // diagonal cell bottom-right
         assertFalse(c.getNeighbors().contains(diag),
-                "La case impaire (2,3) ne doit PAS avoir (3,4) comme voisin diagonal");
+                "The odd cell (2,3) must NOT have (3,4) as a diagonal neighbor");
     }
 
 
-    // Test sur les cases inaccessibles
+    // Tests on inaccessible cells
 
     /**
-     * Vérifie qu'une case inaccessible (un coin) n'a aucun voisin.
+     * Verifies that an inaccessible cell (a corner) has no neighbors.
      *
-     * Les cases hors du terrain de jeu ne doivent pas être reliées
-     * au reste du plateau : leur liste de voisins doit être vide.
+     * Cells outside the playing area must not be connected
+     * to the rest of the board: their neighbor list must be empty.
      */
     @Test
     void inaccessibleCellHasNoNeighbors() {
-        Cell corner = board.getCell(0, 0);  // coin supérieur gauche, inaccessible
+        Cell corner = board.getCell(0, 0);  // top-left corner, inaccessible
         assertTrue(corner.getNeighbors().isEmpty(),
-                "Une case inaccessible ne doit avoir aucun voisin");
+                "An inaccessible cell must have no neighbors");
     }
 
 }

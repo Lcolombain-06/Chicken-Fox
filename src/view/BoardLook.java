@@ -4,6 +4,23 @@ import boardifier.view.ContainerLook;
 import model.Board;
 import model.Cell;
 
+/**
+ *
+ * A         +---+---+
+ *           | \ | / |
+ * B         +---+---+
+ *           | / | \ |
+ * C +---+---+---+---+---+---+
+ *   | \ | / | \ | / | \ | / |
+ * D +---+---+---+---+---+---+
+ *   | / | \ | / | \ | / | \ |
+ * E +---+---+---+---+---+---+
+ *           | \ | / |
+ * F         +---+---+
+ *           | / | \ |
+ * G         +---+---+
+ *   1   2   3   4   5   6   7
+ */
 public class BoardLook extends ContainerLook {
     private Board board;
     private static final char[] COO = {'A', 'B', 'C', 'D', 'E', 'F', 'G'};

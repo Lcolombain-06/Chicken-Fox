@@ -8,35 +8,45 @@ import boardifier.model.Model;
 import boardifier.model.action.ActionList;
 import model.*;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 
-public class HoleDecider extends Decider {
+/**
+ * AI Decision Engine for the Fox team
+ * <p>
+ *     This class uses a score evaluation to analyze and select the mathematically
+ *     optimal tactical move based on the board constraints at this point in the game.
+ * </p>
+ */
+public class FoxDecider extends Decider {
 
     private static final Random loto = new Random(Calendar.getInstance().getTimeInMillis());
 
     private int lastRow = -1;
     private int lastCol = -1;
 
-    public HoleDecider(Model model, Controller control) {
+    public FoxDecider(Model model, Controller control) {
         super(model, control);
     }
 
-
+    /**
+     * Checks all legal moves for the fox and finds the best one
+     *
+     * @return an integer array with the best target coordinates [row, col]
+     */
     public int[] chooseBestMove() {
-
         HoleStageModel stage = (HoleStageModel) model.getGameStage();
         Board board = stage.getBoard();
         Pawn fox = stage.getFox()[0];
 
+        // Get the current position of the fox
         int[] pos = board.getElementCell(fox);
         int foxRow = pos[0];
         int foxCol = pos[1];
 
-        // Calculate the empty cells
+        // Find all reachable cells for the fox
         board.setValidCells(fox, foxRow, foxCol);
 
         List<int[]> validMoves = new ArrayList<>();
@@ -56,6 +66,7 @@ public class HoleDecider extends Decider {
         int bestScore = Integer.MIN_VALUE;
         List<int[]> bestMoves = new ArrayList<>();
 
+        // Calculate the score for each possible move
         for (int[] move : validMoves) {
             int score = scoreMove(fox, foxRow, foxCol, move[0], move[1], board, stage);
             if (score > bestScore) {
@@ -63,40 +74,56 @@ public class HoleDecider extends Decider {
                 bestMoves.clear();
                 bestMoves.add(move);
             } else if (score == bestScore) {
-                bestMoves.add(move);
+                bestMoves.add(move); // Save ties to choose randomly later
             }
         }
 
-        int[] bestMove = bestMoves.get(loto.nextInt(bestMoves.size()));
+        // Reset the board valid cells state
         board.setValidCells(fox, foxRow, foxCol);
-
         board.resetReachableCells(false);
 
         // Choose a cell if the list is empty
         if (bestMoves.isEmpty()) {
             return validMoves.get(loto.nextInt(validMoves.size()));
         }
+        int[] bestMove = bestMoves.get(loto.nextInt(bestMoves.size()));
+
         return bestMove;
     }
 
+    /**
+     * Calculates a score for a specific fox move
+     * <p>
+     * The score is based on 5 tactical rules:
+     * 1. Capturing (absolute priority to jumping over geese)
+     * 2. Center control (bonus for moving closer to the center)
+     * 3. Direction (slight bonus for moving down)
+     * 4. Hunting (bonus for targeting isolated geese)
+     * 5. Anti-loop (malus if the fox goes back to its previous cell)
+     * </p>
+     *
+     * @return An integer score. Higher scores mean better moves.
+     */
     private int scoreMove(Pawn fox, int fromR, int fromC, int toR, int toC, Board board, HoleStageModel stage) {
         int score = 0;
 
-        // absolut priority to capturating
+        // --- RULE 1: Absolute priority to capturing geese
         if (Math.abs(toR - fromR) == 2 || Math.abs(toC - fromC) == 2) {
-            score += 1000;
+            score += 1000; // General bonus for a jump move
             boolean canCapture = board.foxCanCapture(fox, toR, toC);
             board.setValidCells(fox, fromR, fromC);
-            if (canCapture) score += 1000;
+            if (canCapture) score += 1000; // Extra massive bonus for another capture possible after this one
         }
 
+        // --- RULE 2: Move in direction of the center for better angles
         int distCentreOrigine = Math.abs(fromR - 3) + Math.abs(fromC - 3);
         int distCentreDestination = Math.abs(toR - 3) + Math.abs(toC - 3);
 
         if (distCentreDestination < distCentreOrigine) {
-            score += 15; // Bonus if it goes near the center for more angles of attack
+            score += 15; // Bonus for controlling central cells
         }
 
+        // --- RULE 3: Bonus for infiltration down the geese
         if (toR > fromR) {
             score += 5;
         }
@@ -110,15 +137,15 @@ public class HoleDecider extends Decider {
         }
 
 
-        // Bonus if the goose is alone and near to the destination
+        // --- RULE 4: Hunt isolated geese
         Cell destCell = board.getCell(toC, toR);
         for (Cell geese : destCell.getNeighbors()) {
             int nx = geese.getX();
             int ny = geese.getY();
             GameElement e = board.getElement(ny, nx);
             if (e != null && ((Pawn) e).isGoose()) {
-
                 int gooseNeighborCount = 0;
+                // Count how many neighbors this goose has
                 for (Cell nn : geese.getNeighbors()) {
                     GameElement e2 = board.getElement(nn.getY(), nn.getX());
                     if (e2 != null && ((Pawn) e2).isGoose()) {
@@ -126,23 +153,24 @@ public class HoleDecider extends Decider {
                     }
                 }
 
+                // If the goose has 1 or 0 neighbors, it is alone and weak
                 if (gooseNeighborCount <= 1) {
-                    score += 50; // poule isolée, bonus
+                    score += 50; // bonus to attack this isolated goose
 
                 }
             }
 
         }
 
-        // No infinit game so we put a malus if the fox goes on a cell he was uselessly
+        // --- RULE 5: prevent infinite games (try to)
         if (toR == lastRow && toC == lastCol) {
 
             if (score < 1000) {
-                score -= 800;
+                score -= 800; // Big penalty to stop the fox from doing useless back-and-forth moves
             }
         }
 
-        // add some noise in case the choice for the fox is blocked
+        // Add some random noise to break perfect equalities and help the choice
         score += loto.nextInt(100);
 
         return score;
@@ -150,50 +178,53 @@ public class HoleDecider extends Decider {
     }
 
 
-
+    /**
+     * Executes the move chosen by the AI during the fox's turn
+     * <p>
+     * It updates the loop memory, handles removing a goose if it was captured,
+     * and sends the movement to Boardifier.
+     * </p>
+     *
+     * @return The finalized ActionList sequence for this turn
+     */
     @Override
     public ActionList decide() {
         HoleStageModel stage = (HoleStageModel) model.getGameStage();
         Board board = stage.getBoard();
         Pawn fox = stage.getFox()[0];
+
         int[] pos = board.getElementCell(fox);
         int foxRow = pos[0];
         int foxCol = pos[1];
 
+        // Get the best move coordinates
         int[] bestMove = chooseBestMove();
 
-        // keep last move in memory
+        // Save current position as the last position in memory before moving
         this.lastRow = foxRow;
         this.lastCol = foxCol;
 
         ActionList actions = new ActionList();
 
+        // Check if the move is a jump (capture move)
         if (Math.abs(bestMove[0] - foxRow) == 2 || Math.abs(bestMove[1] - foxCol) == 2) {
             GameElement geeseToEat = board.getFirstElement(
                     (foxRow + bestMove[0]) / 2,
                     (foxCol + bestMove[1]) / 2);
             if (geeseToEat != null) {
+                // Generate actions to remove the goose from the board
                 actions.addAll(ActionFactory.generateRemoveFromStage(model, geeseToEat));
-                stage.eatGeese();
+                stage.eatGeese(); // Update game state statistics
             }
             stage.setFoxCaptured(true);
         }
 
-
+        // Add the movement action to the list
         actions.addAll(ActionFactory.generateMoveWithinContainer(model, fox, bestMove[0], bestMove[1]));
 
         stage.setFoxCoo(bestMove[0], bestMove[1]);
         actions.setDoEndOfTurn(true);
         return actions;
     }
-
-
 }
-
-
-// Stratégie renard idée :
-// 1. priorité absolue aux captures possible
-// 2. priorité encore plus forte si plusieurs capture possible
-// 3. pondération + si déplacement vers le bas
-// 4. pondération + si poule isolée (scan du plateau pour orienter la direction)
 
