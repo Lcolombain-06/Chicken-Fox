@@ -1,5 +1,4 @@
 package control;
-
 import boardifier.model.Model;
 import control.HoleController;
 import model.Board;
