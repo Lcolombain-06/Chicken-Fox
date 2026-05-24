@@ -15,10 +15,9 @@ import java.util.Random;
 
 /**
  * AI Decision Engine for the Fox team
- * <p>
  *     This class uses a score evaluation to analyze and select the mathematically
  *     optimal tactical move based on the board constraints at this point in the game.
- * </p>
+ *
  */
 public class FoxDecider extends Decider {
 
@@ -180,10 +179,9 @@ public class FoxDecider extends Decider {
 
     /**
      * Executes the move chosen by the AI during the fox's turn
-     * <p>
+     *
      * It updates the loop memory, handles removing a goose if it was captured,
      * and sends the movement to Boardifier.
-     * </p>
      *
      * @return The finalized ActionList sequence for this turn
      */

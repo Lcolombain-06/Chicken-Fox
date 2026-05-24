@@ -31,9 +31,8 @@ class GooseDeciderTest {
 
     private GooseDecider decider;
 
-    // -----------------------------------------------------------------------
+
     // Helpers
-    // -----------------------------------------------------------------------
 
     private Cell emptyCell(int col, int row) {
         Cell c = mock(Cell.class);
@@ -64,13 +63,12 @@ class GooseDeciderTest {
         when(p.isGoose()).thenReturn(false);
     }
 
-    // -----------------------------------------------------------------------
+
     // Setup
-    // -----------------------------------------------------------------------
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        MockitoAnnotations.initMocks(this);
         when(model.getGameStage()).thenReturn(stage);
         when(stage.getBoard()).thenReturn(board);
 
@@ -80,9 +78,8 @@ class GooseDeciderTest {
         decider = new GooseDecider(model, control);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
+
     // 1. CONTRACT TESTS
-    // ═══════════════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("Contract: basic invariants")
@@ -123,7 +120,7 @@ class GooseDeciderTest {
 
         @Test
         @DisplayName("setValidCells() is never called for the fox")
-        void setValidCells_neverCalledForFox() {
+        void setValidCellsNeverCalledForFox() {
             asFox(fox);
             asGoose(goose);
             placeElement(fox,   0, 0);
@@ -137,7 +134,7 @@ class GooseDeciderTest {
 
         @Test
         @DisplayName("setValidCells() is called once per goose, at its current position")
-        void setValidCells_calledOncePerGoose() {
+        void setValidCellsCalledOncePerGoose() {
             Pawn goose2 = mock(Pawn.class);
             asFox(fox);
             asGoose(goose);
@@ -155,7 +152,7 @@ class GooseDeciderTest {
 
         @Test
         @DisplayName("Board with only a fox (no geese) → endOfTurn, no setValidCells call")
-        void onlyFox_endOfTurnNoSetValidCells() {
+        void onlyFoxEndOfTurnNoSetValidCells() {
             asFox(fox);
             placeElement(fox, 2, 2);
 
@@ -168,7 +165,7 @@ class GooseDeciderTest {
 
         @Test
         @DisplayName("Goose with no reachable cells → endOfTurn")
-        void gooseNoMoves_endOfTurn() {
+        void gooseNoMovesEndOfTurn() {
             asFox(fox);
             asGoose(goose);
             placeElement(fox,   0, 0);
@@ -181,9 +178,8 @@ class GooseDeciderTest {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
+
     // 2. STRATEGY TESTS
-    // ═══════════════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("Strategy: move selection")
@@ -357,9 +353,8 @@ class GooseDeciderTest {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
+
     // 3. UNIT TESTS on evaluateGooseMove
-    // ═══════════════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("Unit: evaluateGooseMove scoring")
@@ -455,9 +450,8 @@ class GooseDeciderTest {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
+
     // 4. EDGE-CASE TESTS
-    // ═══════════════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("Edge cases")
