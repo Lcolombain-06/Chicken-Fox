@@ -24,6 +24,9 @@ public class HoleController extends Controller {
     BufferedReader fileIn;
     boolean fileExhausted;
 
+    // attribute for thz game recording tool
+    private GameRecorder recorder;
+
     public HoleController(Model model, View view) {
         super(model, view);
         firstPlayer = true;
@@ -71,6 +74,14 @@ public class HoleController extends Controller {
      * It is pretty straight forward to write :
      */
     public void stageLoop() {
+        // added to create a game record
+        try {
+            recorder = new GameRecorder("partie_enregistree.txt");
+        } catch (IOException e) {
+            System.out.println("Impossible de créer le fichier d'enregistrement.");
+        }
+
+
         HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
         consoleIn = new BufferedReader(new InputStreamReader(System.in));
         update();
@@ -93,6 +104,9 @@ public class HoleController extends Controller {
                 endOfTurn();
             }
         }
+
+        // added to stop the recording file
+        if (recorder != null) recorder.close();
         endGame();
     }
 
@@ -123,6 +137,11 @@ public class HoleController extends Controller {
             if (model.getIdPlayer() == 0) {
                 HoleDecider decider = new HoleDecider(model, this);
                 actions = decider.decide();
+
+                // able to record the move of the fox AI
+                HoleStageModel stage = (HoleStageModel) model.getGameStage();
+                String move = "" + (char)('A' + stage.getFoxRow()) + (char)('1' + stage.getFoxCol());
+                if (recorder != null) recorder.recordMove(move);
             } else {
                 GooseDecider decider = new GooseDecider(model, this);
                 actions = decider.decide();
@@ -141,6 +160,7 @@ public class HoleController extends Controller {
                     String line = readLine();
                     if (line.length() == 4 || line.length() == 2) {
                         ok = analyseAndPlay(line);
+                        if (recorder != null) recorder.recordMove(line); // add the input to the game record
                     }
                     if (!ok) {
                         System.out.println("incorrect instruction. retry !");
@@ -269,13 +289,13 @@ public class HoleController extends Controller {
             return false;
         }
         // debug
-        System.out.println("Cases valides pour la poule en " + fromR + "," + fromC + " :");
+        /**System.out.println("Cases valides pour la poule en " + fromR + "," + fromC + " :");
         for (int r = 0; r < 7; r++) {
             for (int c = 0; c < 7; c++) {
                 System.out.print(board.getReachableCells()[r][c] ? "1" : "0");
             }
             System.out.println();
-        }
+        }**/
 
         //System.out.println("Case demandée [" + toR + "][" + toC + "] = " + board.getReachableCells()[toR][toC]);
         board.setValidCells(goose, fromR, fromC);

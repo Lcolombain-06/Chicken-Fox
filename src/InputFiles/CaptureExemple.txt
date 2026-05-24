@@ -1,0 +1,14 @@
+# this file show the capture and multi-capture mechanic
+C3
+E3D3
+D2
+E5D5
+# first capture, the fox can capture again, so he play again
+D4
+D6
+E4D4
+D5
+E2E3
+# simple capture, after it, it's geese turn again
+D3
+STOP
