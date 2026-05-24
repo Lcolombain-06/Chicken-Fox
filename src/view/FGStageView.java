@@ -3,19 +3,19 @@ package view;
 import boardifier.model.GameStageModel;
 import boardifier.view.GameStageView;
 import boardifier.view.TextLook;
-import model.HoleStageModel;
+import model.FGStageModel;
 import model.Pawn;
 
-public class HoleStageView extends GameStageView {
+public class FGStageView extends GameStageView {
 
-    public HoleStageView(String name, GameStageModel gameStageModel) {
+    public FGStageView(String name, GameStageModel gameStageModel) {
         super(name, gameStageModel);
     }
 
     @Override
     public void createLooks() {
 
-        HoleStageModel model = (HoleStageModel) gameStageModel;
+        FGStageModel model = (FGStageModel) gameStageModel;
 
         addLook(new TextLook(model.getPlayerName()));
 

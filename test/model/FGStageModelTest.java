@@ -1,19 +1,17 @@
 package model;
 
-import boardifier.model.Model;
-import boardifier.model.StageElementsFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class HoleStageModelTest {
+public class FGStageModelTest {
 
-    private HoleStageModel stageModel;
+    private FGStageModel stageModel;
     private Board board;
 
     @BeforeEach
     void setUp() {
-        stageModel = new HoleStageModel("test", null);
+        stageModel = new FGStageModel("test", null);
         board = new Board(0, 0, stageModel);
         stageModel.setBoard(board);
         stageModel.endInitialization();

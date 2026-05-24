@@ -1,7 +1,7 @@
 import boardifier.control.StageFactory;
 import boardifier.model.Model;
 import boardifier.view.View;
-import control.HoleController;
+import control.FGController;
 
 import java.util.Scanner;
 
@@ -54,11 +54,11 @@ public class HoleConsole {
 
 
         // 2. Enregistrement du stage
-        StageFactory.registerModelAndView("hole", "model.HoleStageModel", "view.HoleStageView");
+        StageFactory.registerModelAndView("hole", "model.FGStageModel", "view.FGStageView");
 
         // 3. Vue et contrôleur
         View view = new View(model);
-        HoleController control = new HoleController(model, view);
+        FGController control = new FGController(model, view);
         control.setFirstStageName("hole");
 
         // 4. Lancement du jeu

@@ -12,13 +12,13 @@ import boardifier.model.TextElement;
  * and places the fox at its initial position.
  * </p>
  */
-public class HoleStageFactory extends StageElementsFactory {
+public class FGStageFactory extends StageElementsFactory {
 
-    private HoleStageModel stageModel;
+    private FGStageModel stageModel;
 
-    public HoleStageFactory(GameStageModel gameStageModel) {
+    public FGStageFactory(GameStageModel gameStageModel) {
         super(gameStageModel);
-        this.stageModel = (HoleStageModel) gameStageModel;
+        this.stageModel = (FGStageModel) gameStageModel;
     }
 
     /**

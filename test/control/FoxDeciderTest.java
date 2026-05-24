@@ -3,10 +3,7 @@ package control;
 import boardifier.control.Controller;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import model.Board;
-import model.Cell;
-import model.HoleStageModel;
-import model.Pawn;
+import model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +21,8 @@ class FoxDeciderTest {
 
     @Mock Model          model;
     @Mock Controller     control;
-    @Mock HoleStageModel stage;
+    @Mock
+    FGStageModel stage;
     @Mock Board          board;
     @Mock Pawn           fox;
     @Mock Pawn           goose;
@@ -132,7 +130,7 @@ class FoxDeciderTest {
         @Test
         @DisplayName("chooseBestMove returns a valid coordinate array of length 2")
         void chooseBestMoveReturnsArrayOfLength2() {
-            // board.getCell is already mocked globally in setUp → no NPE
+            // board.getCell is already mocked globally in setUp -> no NPE
             when(board.getReachableCells()).thenReturn(gridWithCell(2, 3));
             when(board.getElement(anyInt(), anyInt())).thenReturn(null);
 
@@ -195,7 +193,7 @@ class FoxDeciderTest {
         void infiltrationBonus() throws Exception {
             var method = FoxDecider.class.getDeclaredMethod(
                     "scoreMove",
-                    Pawn.class, int.class, int.class, int.class, int.class, Board.class, HoleStageModel.class);
+                    Pawn.class, int.class, int.class, int.class, int.class, Board.class, FGStageModel.class);
             method.setAccessible(true);
 
             when(board.getElement(anyInt(), anyInt())).thenReturn(null);
@@ -216,13 +214,13 @@ class FoxDeciderTest {
         void scoreMoveNoNeighborsNoException() throws Exception {
             var method = FoxDecider.class.getDeclaredMethod(
                     "scoreMove",
-                    Pawn.class, int.class, int.class, int.class, int.class, Board.class, HoleStageModel.class);
+                    Pawn.class, int.class, int.class, int.class, int.class, Board.class, FGStageModel.class);
             method.setAccessible(true);
 
             when(board.getElement(anyInt(), anyInt())).thenReturn(null);
             when(board.foxCanCapture(any(), anyInt(), anyInt())).thenReturn(false);
 
-            // board.getCell mocked globally → getNeighbors returns empty list → no NPE
+            // board.getCell mocked globally -> getNeighbors returns empty list → no NPE
             assertDoesNotThrow(() -> {
                 try {
                     method.invoke(decider, fox, 3, 3, 2, 3, board, stage);
@@ -237,7 +235,7 @@ class FoxDeciderTest {
         void isolatedGooseNeighborBonus() throws Exception {
             var method = FoxDecider.class.getDeclaredMethod(
                     "scoreMove",
-                    Pawn.class, int.class, int.class, int.class, int.class, Board.class, HoleStageModel.class);
+                    Pawn.class, int.class, int.class, int.class, int.class, Board.class, FGStageModel.class);
             method.setAccessible(true);
 
             asGoose(goose);
@@ -273,7 +271,7 @@ class FoxDeciderTest {
         void antiLoopPenalty() throws Exception {
             var method = FoxDecider.class.getDeclaredMethod(
                     "scoreMove",
-                    Pawn.class, int.class, int.class, int.class, int.class, Board.class, HoleStageModel.class);
+                    Pawn.class, int.class, int.class, int.class, int.class, Board.class, FGStageModel.class);
             method.setAccessible(true);
 
             when(board.getElement(anyInt(), anyInt())).thenReturn(null);

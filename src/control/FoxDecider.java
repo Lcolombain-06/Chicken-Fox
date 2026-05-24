@@ -36,7 +36,7 @@ public class FoxDecider extends Decider {
      * @return an integer array with the best target coordinates [row, col]
      */
     public int[] chooseBestMove() {
-        HoleStageModel stage = (HoleStageModel) model.getGameStage();
+        FGStageModel stage = (FGStageModel) model.getGameStage();
         Board board = stage.getBoard();
         Pawn fox = stage.getFox()[0];
 
@@ -103,7 +103,7 @@ public class FoxDecider extends Decider {
      *
      * @return An integer score. Higher scores mean better moves.
      */
-    private int scoreMove(Pawn fox, int fromR, int fromC, int toR, int toC, Board board, HoleStageModel stage) {
+    private int scoreMove(Pawn fox, int fromR, int fromC, int toR, int toC, Board board, FGStageModel stage) {
         int score = 0;
 
         // --- RULE 1: Absolute priority to capturing geese
@@ -187,7 +187,7 @@ public class FoxDecider extends Decider {
      */
     @Override
     public ActionList decide() {
-        HoleStageModel stage = (HoleStageModel) model.getGameStage();
+        FGStageModel stage = (FGStageModel) model.getGameStage();
         Board board = stage.getBoard();
         Pawn fox = stage.getFox()[0];
 

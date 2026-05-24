@@ -7,7 +7,7 @@ import boardifier.model.*;
 import boardifier.model.action.ActionList;
 import boardifier.view.View;
 import model.Board;
-import model.HoleStageModel;
+import model.FGStageModel;
 import model.Pawn;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,12 +21,12 @@ import java.io.InputStreamReader;
  * and computer AI actions.
  * </p>
  */
-public class HoleController extends Controller {
+public class FGController extends Controller {
 
     BufferedReader consoleIn;
     boolean firstPlayer;
 
-    public HoleController(Model model, View view) {
+    public FGController(Model model, View view) {
         super(model, view);
         firstPlayer = true;
     }
@@ -39,7 +39,7 @@ public class HoleController extends Controller {
      * </p>
      */
     public void stageLoop() {
-        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
+        FGStageModel gameStage = (FGStageModel) model.getGameStage();
         consoleIn = new BufferedReader(new InputStreamReader(System.in));
         update();
         while (!model.isEndStage()) {
@@ -74,7 +74,7 @@ public class HoleController extends Controller {
      *
      * @param gameStage The current stage model
      */
-    private void stageInnerLoop(HoleStageModel gameStage) {
+    private void stageInnerLoop(FGStageModel gameStage) {
         do {
             playTurn();
             // If the fox just made a capture, check for chain captures
@@ -150,7 +150,7 @@ public class HoleController extends Controller {
         model.setNextPlayer();
         // get the new player to display its name
         Player p = model.getCurrentPlayer();
-        HoleStageModel stageModel = (HoleStageModel) model.getGameStage();
+        FGStageModel stageModel = (FGStageModel) model.getGameStage();
         stageModel.getPlayerName().setText(p.getName());
     }
 
@@ -191,7 +191,7 @@ public class HoleController extends Controller {
      * Validates and executes a human move command for the Fox.
      */
     private boolean foxPlay(String line) {
-        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
+        FGStageModel gameStage = (FGStageModel) model.getGameStage();
         Board board = gameStage.getBoard();
         gameStage.setFoxCaptured(false);
 
@@ -249,7 +249,7 @@ public class HoleController extends Controller {
      * Validates and executes a human move command for a Goose.
      */
     private boolean geesePlay(String line) {
-        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
+        FGStageModel gameStage = (FGStageModel) model.getGameStage();
         Board board = gameStage.getBoard();
 
         // start and end coordinates
@@ -275,14 +275,7 @@ public class HoleController extends Controller {
             System.out.println("It's the geese's turn !");
             return false;
         }
-        // debug output
-        System.out.println("Valid cells for the goose at " + fromR + "," + fromC + " :");
-        for (int r = 0; r < 7; r++) {
-            for (int c = 0; c < 7; c++) {
-                System.out.print(board.getReachableCells()[r][c] ? "1" : "0");
-            }
-            System.out.println();
-        }
+
 
         board.setValidCells(goose, fromR, fromC);
         if (!board.getReachableCells()[toR][toC]) {
@@ -309,8 +302,8 @@ public class HoleController extends Controller {
     private int partyWinned(int row, int col) {
         int whoWon = 0;
 
-        HoleStageModel gameStage =
-                (HoleStageModel) model.getGameStage();
+        FGStageModel gameStage =
+                (FGStageModel) model.getGameStage();
 
         Board board = gameStage.getBoard();
 
@@ -322,19 +315,6 @@ public class HoleController extends Controller {
 
             int reachableCells =
                     board.setValidCells(fox, row, col);
-
-            System.out.println("reachableCells = " + reachableCells);
-
-            for (int r = 0; r < 7; r++) {
-                for (int c = 0; c < 7; c++) {
-                    System.out.print(
-                            board.getReachableCells()[r][c]
-                                    ? "1 "
-                                    : "0 "
-                    );
-                }
-                System.out.println();
-            }
 
             if (reachableCells == 0) {
                 whoWon = 2;

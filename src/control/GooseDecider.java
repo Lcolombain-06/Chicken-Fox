@@ -8,7 +8,7 @@ import boardifier.model.Model;
 import boardifier.model.action.ActionList;
 import model.Board;
 import model.Cell;
-import model.HoleStageModel;
+import model.FGStageModel;
 import model.Pawn;
 
 /**
@@ -36,7 +36,7 @@ public class GooseDecider extends Decider {
      */
     @Override
     public ActionList decide() {
-        HoleStageModel stage = (HoleStageModel) model.getGameStage();
+        FGStageModel stage = (FGStageModel) model.getGameStage();
         Board board = stage.getBoard();
 
         // 1. Find the current position of the Fox

@@ -3,10 +3,7 @@ package control;
 import boardifier.control.Controller;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
-import model.Board;
-import model.Cell;
-import model.HoleStageModel;
-import model.Pawn;
+import model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +21,8 @@ class GooseDeciderTest {
 
     @Mock Model          model;
     @Mock Controller     control;
-    @Mock HoleStageModel stage;
+    @Mock
+    FGStageModel stage;
     @Mock Board          board;
     @Mock Pawn           fox;
     @Mock Pawn           goose;

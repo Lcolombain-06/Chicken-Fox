@@ -7,19 +7,19 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class HoleStageFactoryTest {
+public class FGStageFactoryTest {
 
-    private HoleStageModel stageModel;
-    private HoleStageFactory factory;
+    private FGStageModel stageModel;
+    private FGStageFactory factory;
     private Model modelMock;
 
     @BeforeEach
     void setUp() {
         modelMock = mock(Model.class);
         when(modelMock.getCurrentPlayerName()).thenReturn("TestPlayer");
-        stageModel = new HoleStageModel("test", modelMock);
+        stageModel = new FGStageModel("test", modelMock);
 
-        factory = new HoleStageFactory(stageModel);
+        factory = new FGStageFactory(stageModel);
         factory.setup();
         stageModel.endInitialization();
     }

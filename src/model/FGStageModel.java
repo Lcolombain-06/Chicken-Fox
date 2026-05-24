@@ -2,7 +2,7 @@ package model;
 
 import boardifier.model.*;
 
-public class HoleStageModel extends GameStageModel {
+public class FGStageModel extends GameStageModel {
 
     private int geeseToPlay;
     private int foxToPlay;
@@ -21,7 +21,7 @@ public class HoleStageModel extends GameStageModel {
 
     private boolean initializing = true;
 
-    public HoleStageModel(String name, Model model) {
+    public FGStageModel(String name, Model model) {
         super(name, model);
 
         geeseToPlay = 13;
@@ -141,6 +141,6 @@ public class HoleStageModel extends GameStageModel {
 
     @Override
     public StageElementsFactory getDefaultElementFactory() {
-        return new HoleStageFactory(this);
+        return new FGStageFactory(this);
     }
 }

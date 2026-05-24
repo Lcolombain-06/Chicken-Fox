@@ -2,10 +2,9 @@ package control;
 
 import boardifier.model.Model;
 import boardifier.model.Player;
-import boardifier.model.action.ActionList;
 import boardifier.view.View;
 import model.Board;
-import model.HoleStageModel;
+import model.FGStageModel;
 import model.Pawn;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,18 +17,19 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 
-class HoleControllerTest {
+class FGControllerTest {
 
     @Mock Model          model;
     @Mock View           view;
-    @Mock HoleStageModel stage;
+    @Mock
+    FGStageModel stage;
     @Mock Board          board;
     @Mock Pawn           fox;
     @Mock Pawn           goose;
     @Mock Player         humanPlayer;
     @Mock Player         computerPlayer;
 
-    private HoleController controller;
+    private FGController controller;
 
 
     // Helpers
@@ -75,7 +75,7 @@ class HoleControllerTest {
         when(computerPlayer.getType()).thenReturn(Player.COMPUTER);
         when(computerPlayer.getName()).thenReturn("Computer");
 
-        controller = new HoleController(model, view);
+        controller = new FGController(model, view);
     }
 
 
@@ -90,7 +90,7 @@ class HoleControllerTest {
          * We access partyWinned via reflection since it is private.
          */
         private int invokePartyWinned(int row, int col) throws Exception {
-            var method = HoleController.class.getDeclaredMethod(
+            var method = FGController.class.getDeclaredMethod(
                     "partyWinned", int.class, int.class);
             method.setAccessible(true);
             return (int) method.invoke(controller, row, col);
@@ -153,7 +153,7 @@ class HoleControllerTest {
             // The test documents the current behavior
             assertDoesNotThrow(() -> {
                 try {
-                    var method = HoleController.class.getDeclaredMethod(
+                    var method = FGController.class.getDeclaredMethod(
                             "partyWinned", int.class, int.class);
                     method.setAccessible(true);
                     method.invoke(controller, 3, 3);
@@ -172,7 +172,7 @@ class HoleControllerTest {
     class InputParsingTests {
 
         private boolean invokeAnalyseAndPlay(String line) throws Exception {
-            var method = HoleController.class.getDeclaredMethod("analyseAndPlay", String.class);
+            var method = FGController.class.getDeclaredMethod("analyseAndPlay", String.class);
             method.setAccessible(true);
             return (boolean) method.invoke(controller, line);
         }
@@ -322,13 +322,13 @@ class HoleControllerTest {
         @Test
         @DisplayName("Controller constructor does not throw")
         void constructorNoException() {
-            assertDoesNotThrow(() -> new HoleController(model, view));
+            assertDoesNotThrow(() -> new FGController(model, view));
         }
 
         @Test
         @DisplayName("analyseAndPlay with empty string does not match STOP and returns false")
         void analyseAndPlayEmptyString() throws Exception {
-            var method = HoleController.class.getDeclaredMethod("analyseAndPlay", String.class);
+            var method = FGController.class.getDeclaredMethod("analyseAndPlay", String.class);
             method.setAccessible(true);
 
             when(model.getIdPlayer()).thenReturn(0);
@@ -350,7 +350,7 @@ class HoleControllerTest {
             when(board.setValidCells(any(), anyInt(), anyInt())).thenReturn(0);
             when(board.getReachableCells()).thenReturn(emptyGrid());
 
-            var method = HoleController.class.getDeclaredMethod("partyWinned", int.class, int.class);
+            var method = FGController.class.getDeclaredMethod("partyWinned", int.class, int.class);
             method.setAccessible(true);
 
             int result1 = (int) method.invoke(controller, 3, 3);
