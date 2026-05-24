@@ -87,7 +87,7 @@ public class HoleStageModel extends GameStageModel {
     }
 
     private void setupCallbacks() {
-
+        // Intercepts structural element additions inside containers
         onPutInContainer((element, container, row, col) -> {
 
             if (initializing) return;

@@ -2,6 +2,14 @@ package model;
 
 import java.util.ArrayList;
 
+/**
+ * Represents a single cell on the game board grid
+ * <p>
+ * A cell is defined by its X and Y coordinates and its accessibility
+ * It also keeps a dynamic list of its neighboring cells to help with
+ * movement calculations
+ * </p>
+ */
 public class Cell {
     private int x;
     private int y;
@@ -46,6 +54,3 @@ public class Cell {
     }
 
 }
-
-
-    // Ajout une methode avec posReverse(); a voir

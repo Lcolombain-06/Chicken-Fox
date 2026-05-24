@@ -15,8 +15,6 @@ public class Pawn extends GameElement {
         this.type = type;
     }
 
-
-
     public boolean isFox() {
         return type == FOX;
     }
