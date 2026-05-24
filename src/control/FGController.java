@@ -10,6 +10,7 @@ import model.Board;
 import model.FGStageModel;
 import model.Pawn;
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -26,9 +27,55 @@ public class FGController extends Controller {
     BufferedReader consoleIn;
     boolean firstPlayer;
 
+    // attribute for when using an input file
+    BufferedReader fileIn;
+    boolean fileExhausted;
+
+
     public FGController(Model model, View view) {
         super(model, view);
         firstPlayer = true;
+    }
+
+    /**
+     * Load a input file to play it.
+     * <p>
+     * if it can't find the file, the game go back in manual mod.
+     * </p>
+     */
+    public void setInputFile(String path) {
+        try {
+            fileIn = new BufferedReader(new FileReader(path));
+            System.out.println("Input file loaded : " + path);
+        } catch (IOException e) {
+            System.out.println("Can't open the file \"" + path + "\" : " + e.getMessage());
+            System.out.println("The party resume in manual mod.");
+            fileIn = null;
+        }
+    }
+
+    /**
+     * read the next line in the file.
+     * <p>
+     * if the file end before the game end, then go to manual mod.
+     * </p>
+     */
+    private String readLine() throws IOException {
+        if (fileIn != null && !fileExhausted) {
+            String line;
+            // On saute les lignes vides et les commentaires (#)
+            while ((line = fileIn.readLine()) != null) {
+                line = line.trim();
+                if (!line.isEmpty() && !line.startsWith("#")) {
+                    System.out.println("(file) > " + line);
+                    return line;
+                }
+            }
+            // when the file is ended before the end of the game
+            fileExhausted = true;
+            System.out.println("--- end of file, game resume in manual mod ---");
+        }
+        return consoleIn.readLine();
     }
 
     /**
@@ -108,7 +155,7 @@ public class FGController extends Controller {
             ActionList actions;
             if (model.getIdPlayer() == 0) {
                 // Fox AI strategy
-                FoxDecider decider = new FoxDecider(model, this); // choix de la stratégie
+                FoxDecider decider = new FoxDecider(model, this); // select the strategy
                 actions = decider.decide();
             } else {
                 // Geese AI strategy
@@ -126,7 +173,7 @@ public class FGController extends Controller {
             while (!ok) {
                 System.out.print(p.getName() + " > ");
                 try {
-                    String line = consoleIn.readLine();
+                    String line = readLine();
                     if (line.length() == 4 || line.length() == 2) {
                         ok = analyseAndPlay(line);
                     }
