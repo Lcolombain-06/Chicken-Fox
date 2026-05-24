@@ -37,12 +37,6 @@ public class Cell {
         return this.accessible;
     }
 
-    // method to change accesibility of the cell (for those in the corner of the grid, or if a pawn is on it).
-    public void setAccessible(boolean accessible) {
-
-        this.accessible = accessible;
-
-    }
 
     // return the list of accessible case from this one.
     public ArrayList<Cell> getNeighbors() {
