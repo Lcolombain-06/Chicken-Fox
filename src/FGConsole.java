@@ -76,7 +76,7 @@ public class FGConsole {
             }
         }
 
-        StageFactory.registerModelAndView("Game", "model.HoleStageModel", "view.HoleStageView");
+        StageFactory.registerModelAndView("Game", "model.FGStageModel", "view.FGStageView");
 
         // 2. Enregistrement du stage
         StageFactory.registerModelAndView("hole", "model.FGStageModel", "view.FGStageView");

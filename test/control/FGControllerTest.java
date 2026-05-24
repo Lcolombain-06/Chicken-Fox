@@ -70,6 +70,8 @@ class FGControllerTest {
         when(computerPlayer.getType()).thenReturn(Player.COMPUTER);
         when(computerPlayer.getName()).thenReturn("Computer");
 
+        when(model.getCurrentPlayer()).thenReturn(humanPlayer);
+
         controller = new FGController(model, view);
     }
 

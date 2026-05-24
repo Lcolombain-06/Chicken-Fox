@@ -1,0 +1,16 @@
+# this is the inputs in the case the geese win in the most efficient way (only 4 geese needed)
+# this file show a win pattern, but doesn't represent a natural game
+C3
+E1D1
+D2
+D1C1
+D1
+E3D3
+E1
+E4E3
+D1
+D3D2
+E1
+E3D3
+D1
+E2E1
