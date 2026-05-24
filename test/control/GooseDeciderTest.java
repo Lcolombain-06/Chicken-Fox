@@ -183,6 +183,17 @@ class GooseDeciderTest {
             assertNotNull(result);
             assertTrue(result.mustDoEndOfTurn());
         }
+
+        @Test
+        @DisplayName("No fox on the board (foxRow stays -1) → decide() does not crash")
+        void noFoxOnBoard_doesNotCrash() {
+            // Only a goose, no fox placed anywhere
+            asGoose(goose);
+            placeElement(goose, 3, 3);
+
+            // The fox search loop will leave foxRow = -1, foxCol = -1
+            assertDoesNotThrow(() -> decider.decide());
+        }
     }
 
     // ===================================================================
@@ -461,6 +472,112 @@ class GooseDeciderTest {
 
             assertTrue(scoreGrouped > scoreAlone);
             assertTrue(scoreGrouped - scoreAlone >= 12);
+        }
+
+        @Test
+        @DisplayName("Fox neighbor is empty → score penalised by -10 (one free fox move)")
+        void foxFreeMovesPenalty() throws Exception {
+            // Fox at (row=2, col=2), one empty neighbor at (nx=3, ny=2)
+            // → foxFreeMoves = 1 → score -= 10
+            Cell foxCell = mock(Cell.class);
+            Cell emptyNeighbor = mock(Cell.class);
+            when(emptyNeighbor.getX()).thenReturn(3); // col
+            when(emptyNeighbor.getY()).thenReturn(2); // row
+            when(foxCell.getNeighbors()).thenReturn(new ArrayList<>(List.of(emptyNeighbor)));
+            when(board.getCell(2, 2)).thenReturn(foxCell);
+
+            // board.getElement returns null by default → neighbor is empty
+
+            Cell dest = mock(Cell.class);
+            when(dest.getNeighbors()).thenReturn(new ArrayList<>());
+            when(board.getCell(5, 5)).thenReturn(dest);
+
+            // Baseline: same setup but fox cell has no neighbors → score should be 0
+            Cell foxCellNoNeighbors = mock(Cell.class);
+            when(foxCellNoNeighbors.getNeighbors()).thenReturn(new ArrayList<>());
+            // We test the penalty directly: one free move costs -10
+            int scoreWithFreeMoves = score(2, 2,  4, 4,  5, 5);
+
+            assertTrue(scoreWithFreeMoves <= -10);
+        }
+
+        @Test
+        @DisplayName("Fox can jump over a goose to an empty cell → score penalised by -150")
+        void capturePenalty() throws Exception {
+            // Fox at (row=2, col=2)
+            // Neighbor at (nx=2, ny=3) → jump lands at (jumpX=2, jumpY=4)
+            // jumpCell is accessible and empty → geeseThreatened++ → score -= 150
+            Cell foxCell = mock(Cell.class);
+            Cell neighbor = mock(Cell.class);
+            when(neighbor.getX()).thenReturn(2); // col
+            when(neighbor.getY()).thenReturn(3); // row
+            when(foxCell.getNeighbors()).thenReturn(new ArrayList<>(List.of(neighbor)));
+            when(board.getCell(2, 2)).thenReturn(foxCell);
+
+            // There IS a piece at the neighbor cell (the goose being jumped over)
+            Pawn jumpedGoose = mock(Pawn.class);
+            asGoose(jumpedGoose);
+            when(board.getElement(3, 2)).thenReturn(jumpedGoose);
+
+            // The landing cell (jumpX=2, jumpY=4) is accessible and empty
+            Cell jumpLanding = mock(Cell.class);
+            when(jumpLanding.isAccessible()).thenReturn(true);
+            when(board.getCell(2, 4)).thenReturn(jumpLanding);
+            // board.getElement(4, 2) returns null by default → landing is empty
+
+            Cell dest = mock(Cell.class);
+            when(dest.getNeighbors()).thenReturn(new ArrayList<>());
+            when(board.getCell(5, 5)).thenReturn(dest);
+
+            int scoreWithCapture = score(2, 2,  4, 4,  5, 5);
+
+            // The capture penalty (-150) must dominate
+            assertTrue(scoreWithCapture <= -150);
+        }
+
+        @Test
+        @DisplayName("Goose 2 cells away on same row or column gets +10 bonus")
+        void distanceTwoBonusSameRow() throws Exception {
+            // Fox at (row=3, col=3)
+            // Goose starts at (row=3, col=4), moves to (row=3, col=5): colDiff=2 → +10
+            // distBefore=1, distAfter=2 → goose moves away, no +15 distance bonus
+            registerEmptyFoxCell(3, 3);
+
+            Cell destTwoAway = mock(Cell.class);
+            when(destTwoAway.getNeighbors()).thenReturn(new ArrayList<>());
+            when(board.getCell(5, 3)).thenReturn(destTwoAway);
+
+            // Control: goose moves to (row=3, col=6): colDiff=3 → no dist-2 bonus, no +15 either
+            Cell destThreeAway = mock(Cell.class);
+            when(destThreeAway.getNeighbors()).thenReturn(new ArrayList<>());
+            when(board.getCell(6, 3)).thenReturn(destThreeAway);
+
+            int scoreTwoAway   = score(3, 3,  3, 4,  3, 5);
+            int scoreThreeAway = score(3, 3,  3, 4,  3, 6);
+
+            assertTrue(scoreTwoAway > scoreThreeAway);
+            assertEquals(10, scoreTwoAway - scoreThreeAway);
+        }
+
+        @Test
+        @DisplayName("No rule applies → score is exactly 0")
+        void noRuleApplies_scoreIsZero() throws Exception {
+            // Fox at (row=0, col=0) with no neighbors → no fox penalty
+            registerEmptyFoxCell(0, 0);
+
+            // Goose stays at same distance (row=4, col=4) → no closer bonus
+            // dest at (row=4, col=4): no goose neighbors, not in front of fox col, not dist-2
+            Cell dest = mock(Cell.class);
+            when(dest.getNeighbors()).thenReturn(new ArrayList<>());
+            when(board.getCell(4, 4)).thenReturn(dest);
+
+            // origRow=4, origCol=3 → distBefore = |4-0|+|3-0| = 7
+            // simRow=4,  simCol=4  → distAfter  = |4-0|+|4-0| = 8  (moves away → no +15)
+            // simRow(4) > foxRow(0) but |simCol(4) - foxCol(0)| = 4 > 1 → no barrage bonus
+            // (4,4) vs fox(0,0): rowDiff=4, colDiff=4 → not dist-2 on same axis
+            int s = score(0, 0,  4, 3,  4, 4);
+
+            assertEquals(0, s);
         }
     }
 
