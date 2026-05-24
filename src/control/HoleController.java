@@ -252,8 +252,7 @@ public class HoleController extends Controller {
     }
 
 
-    private int partyWinned (int row, int col) {
-        // 0 = no one | 1 = Fox | 2 = Geese
+    private int partyWinned(int row, int col) {
         int whoWon = 0;
 
         HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
@@ -261,18 +260,14 @@ public class HoleController extends Controller {
 
         if (gameStage.getGeeseToPlay() < 4) {
             whoWon = 1;
-        }
-
-        else {
+        } else {
             Pawn fox = (Pawn) board.getFirstElement(row, col);
-            int reachableCells = board.setValidCells(fox, row, col);
-            if (reachableCells == 0) {
+            if (fox != null && board.isFoxTrapped(row, col)) {
                 whoWon = 2;
             }
         }
 
         return whoWon;
     }
-
 
 }

@@ -244,6 +244,19 @@ public class Board extends ContainerElement {
                 reachableCells[r][c] = false;
     }
 
+    public boolean isFoxTrapped(int row, int col) {
+        Cell current = cells[row][col];
+        for (Cell neighbor : current.getNeighbors()) {
+            int nx = neighbor.getX();
+            int ny = neighbor.getY();
+            // Le renard peut bouger si au moins une case adjacente est libre
+            if (getElement(ny, nx) == null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
 }
 
