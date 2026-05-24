@@ -16,11 +16,11 @@ import java.io.InputStreamReader;
 
 /**
  * Main game controller for the Fox and Geese game.
- * <p>
+ *
  * This class manages the main game loop, checks victory conditions,
  * switches players between turns, and processes both human console inputs
  * and computer AI actions.
- * </p>
+ *
  */
 public class FGController extends Controller {
 
@@ -80,10 +80,9 @@ public class FGController extends Controller {
 
     /**
      * Starts and controls the main game loop.
-     * <p>
+     *
      * The loop runs as long as the game stage is active. It continuously checks
      * if a player has won. If not, it executes the next turn.
-     * </p>
      */
     public void stageLoop() {
         FGStageModel gameStage = (FGStageModel) model.getGameStage();
@@ -114,10 +113,8 @@ public class FGController extends Controller {
 
     /**
      * Manages multi-capture turns for the Fox.
-     * <p>
      * If the fox captures a goose, the loop checks if another jump
      * is possible. If yes, the fox player keeps playing.
-     * </p>
      *
      * @param gameStage The current stage model
      */
@@ -142,10 +139,9 @@ public class FGController extends Controller {
 
     /**
      * Executes a single turn for the current player.
-     * <p>
+     *
      * If the player is a computer, it calls the AI deciders.
      * If the player is human, it reads and parses input from the console.
-     * </p>
      */
     private void playTurn() {
         Player p = model.getCurrentPlayer();
