@@ -306,22 +306,36 @@ public class HoleController extends Controller {
      * @param col The current column index of the Fox
      * @return 0 if the game continues, 1 if the Fox wins, 2 if the Geese win
      */
-    private int partyWinned (int row, int col) {
-        // 0 = no one | 1 = Fox | 2 = Geese
+    private int partyWinned(int row, int col) {
         int whoWon = 0;
 
-        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
+        HoleStageModel gameStage =
+                (HoleStageModel) model.getGameStage();
+
         Board board = gameStage.getBoard();
 
-        // if there are fewer than 4 geese alive
         if (gameStage.getGeeseToPlay() < 4) {
             whoWon = 1;
-        }
+        } else {
+            Pawn fox =
+                    (Pawn) board.getFirstElement(row, col);
 
-        // the fox is completely trapped (0 reachable cells)
-        else {
-            Pawn fox = (Pawn) board.getFirstElement(row, col);
-            int reachableCells = board.setValidCells(fox, row, col);
+            int reachableCells =
+                    board.setValidCells(fox, row, col);
+
+            System.out.println("reachableCells = " + reachableCells);
+
+            for (int r = 0; r < 7; r++) {
+                for (int c = 0; c < 7; c++) {
+                    System.out.print(
+                            board.getReachableCells()[r][c]
+                                    ? "1 "
+                                    : "0 "
+                    );
+                }
+                System.out.println();
+            }
+
             if (reachableCells == 0) {
                 whoWon = 2;
             }
