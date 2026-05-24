@@ -26,7 +26,7 @@ public class Board extends ContainerElement {
     // during the game loop, call to check all the possible move of the selected cell (fox or goose),
     // and then, call the setValidCells of the type of pawn in function of which player turn it is
     public int setValidCells(Pawn pawn, int row, int col) {
-        //System.out.println("setValidCells appelé pour " + (pawn.isFox() ? "RENARD" : "POULE") + " en [" + row + "][" + col + "]");
+        //System.out.println("setValidCells called for " + (pawn.isFox() ? "FOX" : "GOOSE") + " at [" + row + "][" + col + "]");
 
 
 
@@ -71,8 +71,8 @@ public class Board extends ContainerElement {
 
             int nx = neighbor.getX();
             int ny = neighbor.getY();
-            boolean vertical = (nx == col && ny < row);   // monter verticalement
-            boolean horizontal = (ny == row && nx != col); // se déplacer horizontalement
+            boolean vertical = (nx == col && ny < row);   // move up vertically
+            boolean horizontal = (ny == row && nx != col); // move horizontally
 
             if ((vertical || horizontal) && getElement(ny, nx) == null) {
                 reachableCells[ny][nx] = true;
@@ -244,21 +244,5 @@ public class Board extends ContainerElement {
                 reachableCells[r][c] = false;
     }
 
-    public boolean isFoxTrapped(int row, int col) {
-        Cell current = cells[row][col];
-        for (Cell neighbor : current.getNeighbors()) {
-            int nx = neighbor.getX();
-            int ny = neighbor.getY();
-            // Le renard peut bouger si au moins une case adjacente est libre
-            if (getElement(ny, nx) == null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
 
 }
-
-
-

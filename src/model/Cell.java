@@ -48,4 +48,4 @@ public class Cell {
 }
 
 
-    // Ajout une methode avec posReverse(); a voir
+// Consider adding a method with posReverse(); to be reviewed

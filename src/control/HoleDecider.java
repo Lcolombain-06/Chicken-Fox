@@ -127,7 +127,7 @@ public class HoleDecider extends Decider {
                 }
 
                 if (gooseNeighborCount <= 1) {
-                    score += 50; // poule isolée, bonus
+                    score += 50; // isolated goose, bonus
 
                 }
             }
@@ -189,11 +189,3 @@ public class HoleDecider extends Decider {
 
 
 }
-
-
-// Stratégie renard idée :
-// 1. priorité absolue aux captures possible
-// 2. priorité encore plus forte si plusieurs capture possible
-// 3. pondération + si déplacement vers le bas
-// 4. pondération + si poule isolée (scan du plateau pour orienter la direction)
-

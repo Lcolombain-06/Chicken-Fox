@@ -32,21 +32,17 @@ public class HoleController extends Controller {
         HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
         consoleIn = new BufferedReader(new InputStreamReader(System.in));
         update();
-        while(! model.isEndStage()) {
+        while (!model.isEndStage()) {
             int whoWon = partyWinned(gameStage.getFoxRow(), gameStage.getFoxCol());
 
             if (whoWon == 1) {
                 System.out.println("Fox won!");
                 model.setIdWinner(0);
                 model.stopStage();
-            }
-
-            else if (whoWon == 2) {
+            } else if (whoWon == 2) {
                 model.setIdWinner(1);
                 model.stopStage();
-            }
-
-            else if (whoWon == 0) {
+            } else if (whoWon == 0) {
                 stageInnerLoop(gameStage);
                 endOfTurn();
             }
@@ -67,7 +63,7 @@ public class HoleController extends Controller {
                     break;
                 }
 
-                System.out.println("Another capture is possible, it's still" +  model.getCurrentPlayer().getName() + "turn!");
+                System.out.println("Another capture is possible, it's still" + model.getCurrentPlayer().getName() + "turn!");
             }
         } while (gameStage.isFoxCaptured());
     }
@@ -90,8 +86,7 @@ public class HoleController extends Controller {
             ActionPlayer play = new ActionPlayer(model, this, actions);
             play.start();
             update();
-        }
-        else {
+        } else {
             boolean ok = false;
             while (!ok) {
                 System.out.print(p.getName() + " > ");
@@ -103,8 +98,8 @@ public class HoleController extends Controller {
                     if (!ok) {
                         System.out.println("incorrect instruction. retry !");
                     }
+                } catch (IOException e) {
                 }
-                catch (IOException e) {}
             }
         }
     }
@@ -118,6 +113,7 @@ public class HoleController extends Controller {
         HoleStageModel stageModel = (HoleStageModel) model.getGameStage();
         stageModel.getPlayerName().setText(p.getName());
     }
+
     private boolean analyseAndPlay(String line) {
         if (line.equalsIgnoreCase("STOP")) {
             model.stopStage();
@@ -226,8 +222,8 @@ public class HoleController extends Controller {
             System.out.println("It's geese turn !");
             return false;
         }
-        // debug
-        System.out.println("Cases valides pour la poule en " + fromR + "," + fromC + " :");
+        // debug output
+        System.out.println("Valid cells for the goose at " + fromR + "," + fromC + " :");
         for (int r = 0; r < 7; r++) {
             for (int c = 0; c < 7; c++) {
                 System.out.print(board.getReachableCells()[r][c] ? "1" : "0");
@@ -235,10 +231,10 @@ public class HoleController extends Controller {
             System.out.println();
         }
 
-        //System.out.println("Case demandée [" + toR + "][" + toC + "] = " + board.getReachableCells()[toR][toC]);
+        //System.out.println("Requested cell [" + toR + "][" + toC + "] = " + board.getReachableCells()[toR][toC]);
         board.setValidCells(goose, fromR, fromC);
         if (!board.getReachableCells()[toR][toC]) {
-            System.out.println("trop loin");
+            System.out.println("too far");
             return false;
         }
 
@@ -255,19 +251,38 @@ public class HoleController extends Controller {
     private int partyWinned(int row, int col) {
         int whoWon = 0;
 
-        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
+        HoleStageModel gameStage =
+                (HoleStageModel) model.getGameStage();
+
         Board board = gameStage.getBoard();
 
         if (gameStage.getGeeseToPlay() < 4) {
             whoWon = 1;
         } else {
-            Pawn fox = (Pawn) board.getFirstElement(row, col);
-            if (fox != null && board.isFoxTrapped(row, col)) {
+            Pawn fox =
+                    (Pawn) board.getFirstElement(row, col);
+
+            int reachableCells =
+                    board.setValidCells(fox, row, col);
+
+            System.out.println("reachableCells = " + reachableCells);
+
+            for (int r = 0; r < 7; r++) {
+                for (int c = 0; c < 7; c++) {
+                    System.out.print(
+                            board.getReachableCells()[r][c]
+                                    ? "1 "
+                                    : "0 "
+                    );
+                }
+                System.out.println();
+            }
+
+            if (reachableCells == 0) {
                 whoWon = 2;
             }
         }
 
         return whoWon;
     }
-
 }
