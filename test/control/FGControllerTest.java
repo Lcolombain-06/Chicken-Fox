@@ -39,11 +39,6 @@ class FGControllerTest {
         when(p.isGoose()).thenReturn(false);
     }
 
-    private void asGoose(Pawn p) {
-        when(p.isFox()).thenReturn(false);
-        when(p.isGoose()).thenReturn(true);
-    }
-
     private boolean[][] emptyGrid() {
         return new boolean[7][7];
     }
@@ -279,8 +274,6 @@ class FGControllerTest {
         @Test
         @DisplayName("endOfTurn calls model.setNextPlayer()")
         void endOfTurnCallsSetNextPlayer() {
-            model.Cell playerNameLabel = mock(model.Cell.class);
-            when(model.getCurrentPlayer()).thenReturn(humanPlayer);
 
             boardifier.model.TextElement textElement = mock(boardifier.model.TextElement.class);
             when(stage.getPlayerName()).thenReturn(textElement);

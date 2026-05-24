@@ -130,7 +130,7 @@ class FoxDeciderTest {
         @Test
         @DisplayName("chooseBestMove returns a valid coordinate array of length 2")
         void chooseBestMoveReturnsArrayOfLength2() {
-            // board.getCell is already mocked globally in setUp -> no NPE
+
             when(board.getReachableCells()).thenReturn(gridWithCell(2, 3));
             when(board.getElement(anyInt(), anyInt())).thenReturn(null);
 
@@ -198,19 +198,17 @@ class FoxDeciderTest {
 
             when(board.getElement(anyInt(), anyInt())).thenReturn(null);
             when(board.foxCanCapture(any(), anyInt(), anyInt())).thenReturn(false);
-            // board.getCell is already mocked globally → no NPE
 
             // From (3,3): down to (4,3) gets +5; up to (2,3) does not
             int scoreDown = (int) method.invoke(decider, fox, 3, 3, 4, 3, board, stage);
             int scoreUp   = (int) method.invoke(decider, fox, 3, 3, 2, 3, board, stage);
 
-            // Both should be valid integers (method ran without NPE)
             assertTrue(scoreDown > Integer.MIN_VALUE);
             assertTrue(scoreUp   > Integer.MIN_VALUE);
         }
 
         @Test
-        @DisplayName("scoreMove does not throw NPE when destination cell has no goose neighbors")
+        @DisplayName("scoreMove does not throw a Null Pointer Exception when the destination cell has no neighboring geese")
         void scoreMoveNoNeighborsNoException() throws Exception {
             var method = FoxDecider.class.getDeclaredMethod(
                     "scoreMove",
@@ -220,7 +218,6 @@ class FoxDeciderTest {
             when(board.getElement(anyInt(), anyInt())).thenReturn(null);
             when(board.foxCanCapture(any(), anyInt(), anyInt())).thenReturn(false);
 
-            // board.getCell mocked globally -> getNeighbors returns empty list → no NPE
             assertDoesNotThrow(() -> {
                 try {
                     method.invoke(decider, fox, 3, 3, 2, 3, board, stage);
@@ -241,7 +238,6 @@ class FoxDeciderTest {
             asGoose(goose);
             when(board.foxCanCapture(any(), anyInt(), anyInt())).thenReturn(false);
 
-            // Dest A (toC=4, toR=3): has a goose neighbor at (col=5, row=3)
             Cell destWithGoose = mock(Cell.class);
             Cell gooseNeighborCell = mock(Cell.class);
             when(gooseNeighborCell.getX()).thenReturn(5); // col
@@ -255,8 +251,6 @@ class FoxDeciderTest {
             Cell gooseOwnCell = mock(Cell.class);
             when(gooseOwnCell.getNeighbors()).thenReturn(new ArrayList<>());
             when(board.getCell(5, 3)).thenReturn(gooseOwnCell);
-
-            // Dest B (toC=0, toR=3): no goose neighbor (uses global default mock)
             // board.getCell(0,3) is already covered by the global anyInt() mock
 
             int scoreWithGoose = (int) method.invoke(decider, fox, 3, 3, 3, 4, board, stage);
@@ -277,8 +271,6 @@ class FoxDeciderTest {
             when(board.getElement(anyInt(), anyInt())).thenReturn(null);
             when(board.foxCanCapture(any(), anyInt(), anyInt())).thenReturn(false);
 
-            // Simulate first decide() → fox was at (3,3), moved to (2,3)
-            // lastRow/lastCol are set inside decide(), so trigger it first
             when(board.getReachableCells()).thenReturn(gridWithCell(2, 3));
             decider.decide();
 

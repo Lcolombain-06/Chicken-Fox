@@ -91,7 +91,7 @@ public class GooseDecider extends Decider {
 
         // check: if no goose can move
         if (bestPawn == null) {
-            System.out.println("CRITICAL: GEESE BOT HAS NO VALID MOVES AVAILABLE");
+            //System.out.println("CRITICAL: GEESE BOT HAS NO VALID MOVES AVAILABLE");
             ActionList empty = new ActionList();
             empty.setDoEndOfTurn(true);
             return empty;
