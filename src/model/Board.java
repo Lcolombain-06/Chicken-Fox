@@ -1,12 +1,7 @@
 package model;
 
-import boardifier.control.Logger;
 import boardifier.model.GameStageModel;
 import boardifier.model.ContainerElement;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.awt.*;
 
 /**
  * Main board represent the element where pawns are put when played
@@ -20,130 +15,156 @@ public class Board extends ContainerElement {
     private Cell[][] cells;
 
     public Board(int x, int y, GameStageModel gameStageModel) {
-        // call the super-constructor to create a 7x7 grid, named "board", and in x,y in space.
-        super("board", x, y, 7 , 7, gameStageModel);
+        super("board", x, y, 7, 7, gameStageModel);
         initBoard();
     }
 
-    // return a cell of the board (usefull for the movements of the pawns, they can check neighbors).
     public Cell getCell(int x, int y) {
-        return this.cells[x][y];
+        return this.cells[y][x];
     }
 
-    public void setValidCells(Pawn pawn) {
-        resetReachableCells(false);
-        int[] pos = getElementCell(pawn);  // méthode héritée de ContainerElement
-        if (pos == null) return;
-        int row = pos[0];
-        int col = pos[1];
+    // during the game loop, call to check all the possible move of the selected cell (fox or goose),
+    // and then, call the setValidCells of the type of pawn in function of which player turn it is
+    /**
+     * Calculates and highlights all valid destination cells for a given pawn.
+     * <p>
+     * during the game loop, call to check all the possible move of the selected cell (fox or goose),
+     * and then, call the setValidCells of the type of pawn in function of which player turn it is
+     * </p>
+     * @param pawn The pawn component moving (Fox or Goose).
+     * @param row  The starting row index.
+     * @param col  The starting column index.
+     * @return The number of legal moves found for the fox, or 0 for the geese.
+     */
+    public int setValidCells(Pawn pawn, int row, int col) {
+        for (int r = 0; r < 7; r++)
+            for (int c = 0; c < 7; c++)
+                reachableCells[r][c] = false;
 
-        List<Point> valid;
-        if (pawn.getColor() == Pawn.PAWN_BLACK) {
-            valid = computeValidCellsChicken(row, col);
-        } else {
-            valid = computeValidCellsFox(row, col);
-        }
-        for (Point p : valid) {
-            reachableCells[p.y][p.x] = true;
-        }
+        Cell current = cells[row][col];
+        if (pawn.isFox()) return setFoxValidCells(current, row, col);
+        else { setGeeseValidCells(current, row, col); return 0; }
     }
 
+    /**
+     * Calculates all valid movements for the Fox (standard steps and jumps).
+     */
+    private int setFoxValidCells(Cell current, int row, int col) {
+        int nbrValidCells = 0;
+        for (Cell neighbor : current.getNeighbors()) {
+            int neighborX = neighbor.getX();
+            int neighborY = neighbor.getY();
 
-    // MVT POULE
-    public List<Point> computeValidCellsChicken(int row, int col) {
-        List<Point> valid = new ArrayList<>();
-
-
-        //demandé si correspond bien au, bon move
-        int[][] chickenDeltas = {
-                {0, -1},   // gauche
-                {0, +1},   // droite
-                {+1, 0},   // bas
-                {+1, -1},  // bas-gauche
-                {+1, +1},  // bas-droite
-        };
-
-        Cell src = cells[row][col];
-
-        for (int[] delta : chickenDeltas) {
-            int newRow = row + delta[0];
-            int newCol = col + delta[1];
-
-            // ccondition pour eviter les sortie de plateau.
-            if (newRow < 0 || newRow >= 7 || newCol < 0 || newCol >= 7) continue;
-
-
-            // Si la case est accesible. Donc correspond a un voisin
-            if (!dest.isAccessible()) continue;
-            // Verifie que sur la case il n'y a pas d'autre pion
-            if (!isEmptyAt(newRow, newCol)) continue;
-
-            // vérifier que c'est bien un voisin déclaré (respecte la forme du plateau)
-            Cell src = cells[row][col];
-            if (src.getNeighbors().contains(dest)) {
-                valid.add(new Point(newCol, newRow));
+            if (getElement(neighborY, neighborX) == null) {
+                reachableCells[neighborY][neighborX] = true;
+                nbrValidCells++;
+            }
+            // Neighbor cell contains a goose, check for a valid jump
+            else {
+                int jumpX = neighborX + (neighborX - col);
+                int jumpY = neighborY + (neighborY - row);
+                if (jumpX < 7 && jumpX >= 0 && jumpY >= 0 && jumpY < 7) {
+                    Cell jumpToCell = cells[jumpY][jumpX];
+                    if (jumpToCell.isAccessible() && getElement(jumpY, jumpX) == null) {
+                        reachableCells[jumpY][jumpX] = true;
+                        nbrValidCells++;
+                    }
+                }
             }
         }
+        return nbrValidCells;
+    }
 
-        return valid;
+    /**
+     * Calculates all valid movements for a Goose (only left, right, or up).
+     */
+    private void setGeeseValidCells(Cell current, int row, int col) {
+
+        for (Cell neighbor : current.getNeighbors()) {
+
+            int nx = neighbor.getX();
+            int ny = neighbor.getY();
+            boolean vertical = (nx == col && ny < row);   // Only moving up vertically
+            boolean horizontal = (ny == row && nx != col); // Moving left or right horizontally
+
+            if ((vertical || horizontal) && getElement(ny, nx) == null) {
+                reachableCells[ny][nx] = true;
+            }
+        }
     }
 
 
+    /**
+     * After a fox's capture, checks if the fox can execute another capture move from its spot.
+     *
+     * @param fox The fox pawn element
+     * @param row Current row index
+     * @param col Current column index
+     * @return true if a capture jump is available, false otherwise
+     */
+    public boolean foxCanCapture(Pawn fox, int row, int col) {
+        setValidCells(fox, row, col);
+        for (int r = 0; r < 7; r++)
+            for (int c = 0; c < 7; c++)
+                if (reachableCells[r][c] && (Math.abs(r - row) == 2 || Math.abs(c - col) == 2)) return true;
+        return false;
+    }
 
-    // initialise the board with all corner remove (to form the "plus" shape).
+    /**
+     * Fills the 7x7 internal grid matrix with initialized Cell objects.
+     */
     private void initBoard() {
         cells = new Cell[7][7];
-
-        for(int y = 0; y < 7; y++) {
-            for(int x = 0; x < 7; x++) {
-
-                boolean accessible = true;
-
-                // forbiden zone (corners)
-                if ((x < 2 || x > 4) && (y < 2 || y > 4)) {
-                    accessible = false;
-                }
-
+        for (int y = 0; y < 7; y++) {
+            for (int x = 0; x < 7; x++) {
+                boolean accessible = !((x < 2 || x > 4) && (y < 2 || y > 4));
                 cells[y][x] = new Cell(x, y, accessible);
             }
         }
-
         initNeighbors();
     }
 
+    /**
+     * Since the board isn't a square and some cells have diagonal neighbors,
+     * we initialize a list of neighbors for each cell
+     */
     private void initNeighbors() {
         int[][] orthogonal = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-        int[][] diagonal = {{-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
+        int[][] diagonal   = {{-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
 
-        for(int y = 0; y < 7 , y++) {
+        for (int y = 0; y < 7; y++) {
             for (int x = 0; x < 7; x++) {
                 Cell c = cells[y][x];
-
                 if (!c.isAccessible()) continue;
-
-                // orthogonal neighbors
-                for (int[] d : orthogonal) {
-                    int nx = x + d[0];
-                    int ny = y + d[1];
-                    //ajout verification des limites
-                    if (nx < 0 || ny < 0 || nx >= 7 || ny >= 7) continue;
-                    if(cells[ny][nx].isAccessible()) {
-                        c.addNeighbor(cells[ny][nx]);
-                    }
-                }
-
-                // diagonal (for even cases)
-                if ((x + y) % 2 == 0) {
-                    for (int[] d : diagonal) {
-                        int nx = x + d[0];
-                        int ny = y + d[1];
-
-                        if(cells[ny][nx].isAccessible()) {
-                            c.addNeighbor(cells[ny][nx]);
-                        }
-                    }
-                }
+                addNeighbors(c, x, y, orthogonal);
+                if ((x + y) % 2 == 0) addNeighbors(c, x, y, diagonal);
             }
         }
     }
+
+    /**
+     * when call by initNeigbors, add the neigbors of each cells in there list of neighbors
+     */
+    private void addNeighbors(Cell c, int x, int y, int[][] directions) {
+        for (int[] d : directions) {
+            int nx = x + d[0];
+            int ny = y + d[1];
+            if (nx < 0 || ny < 0 || nx >= 7 || ny >= 7) continue;
+            if (cells[ny][nx].isAccessible()) c.addNeighbors(cells[ny][nx]);
+        }
+    }
+
+    /**
+     * Resets the entire reachable cells selection matrix to false
+     */
+    public void clearValidCells() {
+        for (int r = 0; r < 7; r++)
+            for (int c = 0; c < 7; c++)
+                reachableCells[r][c] = false;
+    }
+
+
 }
+
+
+
