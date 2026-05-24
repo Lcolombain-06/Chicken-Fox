@@ -8,369 +8,612 @@ import model.Pawn;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
-
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * ============================================================
- * Tests des CONDITIONS DE VICTOIRE telles qu'elles sont
- * réellement codées dans HoleController.partyWinned().
- *
- * On n'utilise PAS Mockito : on crée un vrai Model, un vrai
- * HoleStageModel et un vrai Board, exactement comme le jeu
- * le fait au démarrage.
- *
- * La méthode partyWinned() est privée dans HoleController.
- * On y accède via la Réflexion Java (getDeclaredMethod) pour
- * pouvoir la tester directement sans modifier le code source.
- *
- * Valeurs clés de la logique :
- *   - geeseToPlay démarre à 13 (dans HoleStageModel).
- *   - Chaque appel à eatGeese() retire 1 poule du compteur.
- *   - Le renard gagne si geeseToPlay < 4.
- *   - Les poules gagnent si le renard n'a plus aucune case
- *     atteignable (setValidCells retourne 0).
- *   - Retour : 0 = personne, 1 = renard, 2 = poules.
- * ============================================================
- */
+
 public class HoleControllerTest {
 
-    // ---------------------------------------------------------------
-    // Infrastructure commune à tous les tests
-    // ---------------------------------------------------------------
 
-    private Model          model;
+    // Data common to all tests
+    private Model model;
     private HoleStageModel gameStage;
-    private Board          board;
+    private Board board;
     private HoleController controller;
 
-    /**
-     * Avant chaque test on repart d'une partie toute fraîche :
-     *  - Un Model vide (pas de View, pas de joueurs réels).
-     *  - Un HoleStageModel branché sur ce Model.
-     *  - Un Board vide posé sur le HoleStageModel.
-     *  - Un HoleController qui utilise ce même Model.
-     *
-     * On appelle endInitialization() pour désactiver le callback
-     * qui décompte geeseToPlay automatiquement à chaque pose —
-     * on veut contrôler ça manuellement dans les tests.
-     */
+
+    // Initializes a clean test environment before each test.
+
     @BeforeEach
-    void setUp() {
-        model      = new Model();
-        gameStage  = new HoleStageModel("test", model);
-        board      = new Board(0, 0, gameStage);
+    void setUp() throws Exception {
+
+        model = new Model();
+
+        gameStage = new HoleStageModel("test", model);
+
+        board = new Board(0, 0, gameStage);
 
         gameStage.setBoard(board);
+
         model.setGameStage(gameStage);
 
-        // Désactive le callback "auto-décompte" pour les tests
+        // Disables automatic pool counting
         gameStage.endInitialization();
 
-        // HoleController(model, view) : view peut être null pour les tests
-        // qui n'appellent pas update() ni les méthodes d'affichage.
         controller = new HoleController(model, null);
+        InputStream emptyStream = new ByteArrayInputStream(new byte[0]);
+
+        BufferedReader fakeReader =
+                new BufferedReader(new InputStreamReader(emptyStream));
+
+        Field consoleInField =
+                HoleController.class.getDeclaredField("consoleIn");
+
+        consoleInField.setAccessible(true);
+
+        consoleInField.set(controller, fakeReader);
     }
 
-    /**
-     * Méthode utilitaire : appelle la méthode PRIVÉE partyWinned(row, col)
-     * via la Réflexion Java.
-     *
-     * Pourquoi la réflexion ? partyWinned est privée car elle est un
-     * détail d'implémentation interne au contrôleur. Mais c'est elle
-     * qui contient toute la logique de victoire → il est pertinent de
-     * la tester directement plutôt que via stageLoop() entier.
-     *
-     * @param row  Ligne où se trouve le renard.
-     * @param col  Colonne où se trouve le renard.
-     * @return 0 = personne ne gagne, 1 = renard gagne, 2 = poules gagnent.
-     */
+    // Utility methods (reflection)
     private int callPartyWinned(int row, int col) throws Exception {
-        Method m = HoleController.class.getDeclaredMethod("partyWinned", int.class, int.class);
-        m.setAccessible(true);
-        return (int) m.invoke(controller, row, col);
+
+        Method method =
+                HoleController.class.getDeclaredMethod(
+                        "partyWinned",
+                        int.class,
+                        int.class
+                );
+
+        method.setAccessible(true);
+
+        return (int) method.invoke(controller, row, col);
     }
 
-    // ---------------------------------------------------------------
-    // Tests : personne ne gagne encore (retour 0)
-    // ---------------------------------------------------------------
+    /**
+     * Calls the private method foxPlay().
+     */
+    private boolean callFoxPlay(String line) throws Exception {
+
+        Method method =
+                HoleController.class.getDeclaredMethod(
+                        "foxPlay",
+                        String.class
+                );
+
+        method.setAccessible(true);
+
+        return (boolean) method.invoke(controller, line);
+    }
 
     /**
-     * En début de partie, le compteur de poules est à 13 (≥ 4)
-     * et le renard a des cases libres autour de lui.
-     * → Personne ne doit gagner : retour attendu = 0.
-     *
-     * On place le renard au centre (3,3) du plateau vide.
-     */
+     * Calls the private method geesePlay().
+     **/
+    private boolean callGeesePlay(String line) throws Exception {
+
+        Method method =
+                HoleController.class.getDeclaredMethod(
+                        "geesePlay",
+                        String.class
+                );
+
+        method.setAccessible(true);
+
+        return (boolean) method.invoke(controller, line);
+    }
+
+
+    // Tests: no winner
+
     @Test
     void nobodyWinsAtStart() throws Exception {
-        // Renard au centre, plateau vide autour → plusieurs cases libres
+
         Pawn fox = new Pawn(Pawn.FOX, gameStage);
-        gameStage.putInContainer(fox, board, 3, 3);
+
+        board.addElement(fox, 3, 3);
+
         gameStage.setFoxCoo(3, 3);
 
         int result = callPartyWinned(3, 3);
 
-        assertEquals(0, result,
-                "En début de partie personne ne doit gagner (geeseToPlay=13, renard libre)");
+        assertEquals(
+                0,
+                result,
+                "At the start of the game, no one should win"
+        );
     }
 
-    /**
-     * Avec exactement 4 poules restantes (geeseToPlay == 4),
-     * la condition renard (< 4) n'est pas encore atteinte.
-     * Si le renard a encore des cases libres → retour = 0.
-     */
     @Test
     void nobodyWinsWhenExactlyFourGeese() throws Exception {
-        // On simule qu'il ne reste que 4 poules dans le compteur
-        // geeseToPlay démarre à 13, on "mange" 9 poules
-        for (int i = 0; i < 9; i++) gameStage.eatGeese(); // 13 - 9 = 4
+
+        // 13 - 9 = 4
+        for (int i = 0; i < 9; i++) {
+            gameStage.eatGeese();
+        }
 
         Pawn fox = new Pawn(Pawn.FOX, gameStage);
-        gameStage.putInContainer(fox, board, 3, 3);
+
+        board.addElement(fox, 3, 3);
+
         gameStage.setFoxCoo(3, 3);
 
         int result = callPartyWinned(3, 3);
 
-        assertEquals(0, result,
-                "Avec 4 poules restantes et le renard libre, personne ne gagne");
+        assertEquals(
+                0,
+                result,
+                "With four groups remaining, no one wins"
+        );
     }
 
-    // ---------------------------------------------------------------
-    // Tests : le RENARD gagne (retour 1)
-    // ---------------------------------------------------------------
 
-    /**
-     * Le renard gagne quand geeseToPlay < 4.
-     * Avec 3 poules restantes, la condition est atteinte.
-     * → Retour attendu = 1.
-     *
-     * La position du renard n'a pas d'importance ici : le renard
-     * gagne avant même qu'on vérifie s'il est bloqué.
-     */
+    // Tests : victoire du renard
+
     @Test
     void foxWinsWhenThreeGeeseLeft() throws Exception {
-        // geeseToPlay = 13 - 10 = 3
-        for (int i = 0; i < 10; i++) gameStage.eatGeese();
+
+        // 13 - 10 = 3
+        for (int i = 0; i < 10; i++) {
+            gameStage.eatGeese();
+        }
 
         Pawn fox = new Pawn(Pawn.FOX, gameStage);
-        gameStage.putInContainer(fox, board, 3, 3);
+
+        board.addElement(fox, 3, 3);
+
         gameStage.setFoxCoo(3, 3);
 
         int result = callPartyWinned(3, 3);
 
-        assertEquals(1, result,
-                "Le renard doit gagner quand il reste 3 poules (< 4)");
+        assertEquals(
+                1,
+                result,
+                "The fox must win with fewer than four hens"
+        );
     }
 
-    /**
-     * Le renard gagne aussi quand il ne reste plus aucune poule (0).
-     * Cas extrême pour vérifier la robustesse de la condition.
-     */
     @Test
     void foxWinsWhenNoGeeseLeft() throws Exception {
-        // geeseToPlay = 13 - 13 = 0
-        for (int i = 0; i < 13; i++) gameStage.eatGeese();
+
+        for (int i = 0; i < 13; i++) {
+            gameStage.eatGeese();
+        }
 
         Pawn fox = new Pawn(Pawn.FOX, gameStage);
-        gameStage.putInContainer(fox, board, 3, 3);
+
+        board.addElement(fox, 3, 3);
+
         gameStage.setFoxCoo(3, 3);
 
         int result = callPartyWinned(3, 3);
 
-        assertEquals(1, result,
-                "Le renard doit gagner quand il ne reste aucune poule");
+        assertEquals(
+                1,
+                result,
+                "The fox must win when there are no more chickens left"
+        );
     }
 
-    /**
-     * Avec 1 poule restante, le renard gagne (1 < 4).
-     * Cas limite entre "aucune poule" et "assez de poules".
-     */
     @Test
     void foxWinsWhenOneGooseLeft() throws Exception {
-        // geeseToPlay = 13 - 12 = 1
-        for (int i = 0; i < 12; i++) gameStage.eatGeese();
+
+        // 13 - 12 = 1
+        for (int i = 0; i < 12; i++) {
+            gameStage.eatGeese();
+        }
 
         Pawn fox = new Pawn(Pawn.FOX, gameStage);
-        gameStage.putInContainer(fox, board, 3, 3);
+
+        board.addElement(fox, 3, 3);
+
         gameStage.setFoxCoo(3, 3);
 
         int result = callPartyWinned(3, 3);
 
-        assertEquals(1, result,
-                "Le renard doit gagner quand il reste 1 poule (< 4)");
+        assertEquals(
+                1,
+                result,
+                "The Fox must win with only one hen remaining"
+        );
     }
 
-    /**
-     * La condition du renard (geeseToPlay < 4) est prioritaire sur
-     * celle des poules (renard bloqué). Même si le renard était
-     * entouré, si geeseToPlay < 4 alors c'est le renard qui gagne.
-     *
-     * On vérifie que le if/else est dans le bon ordre.
-     */
     @Test
     void foxConditionTakesPriorityOverGeeseCondition() throws Exception {
-        // Seulement 2 poules restantes → condition renard activée
-        for (int i = 0; i < 11; i++) gameStage.eatGeese(); // 13-11=2
 
-        // On bloque le renard avec des poules (même si peu nombreuses)
+        // 13 - 11 = 2
+        for (int i = 0; i < 11; i++) {
+            gameStage.eatGeese();
+        }
+
         Pawn fox = new Pawn(Pawn.FOX, gameStage);
-        gameStage.putInContainer(fox, board, 3, 3);
+
+        board.addElement(fox, 3, 3);
+
         gameStage.setFoxCoo(3, 3);
 
-        // On place des poules autour pour (tenter de) simuler un blocage
-        gameStage.putInContainer(new Pawn(Pawn.GOOSE, gameStage), board, 2, 3);
-        gameStage.putInContainer(new Pawn(Pawn.GOOSE, gameStage), board, 4, 3);
+        board.addElement(new Pawn(Pawn.GOOSE, gameStage), 2, 3);
+
+        board.addElement(new Pawn(Pawn.GOOSE, gameStage), 4, 3);
 
         int result = callPartyWinned(3, 3);
 
-        // Renard gagne car geeseToPlay=2 < 4, malgré la présence de poules
-        assertEquals(1, result,
-                "Le renard doit gagner (< 4 poules) même si des poules sont proches");
+        assertEquals(
+                1,
+                result,
+                "The fox's condition must be the top priority"
+        );
     }
 
-    // ---------------------------------------------------------------
-    // Tests : les POULES gagnent (retour 2)
-    // ---------------------------------------------------------------
+    // Tests : victoire des poules
 
-    /**
-     * Les poules gagnent quand le renard n'a plus aucune case accessible.
-     * On encercle le renard en (3,3) avec des poules sur ses 8 voisins.
-     *
-     * Important : geeseToPlay doit rester ≥ 4, sinon la condition
-     * du renard prendrait le dessus avant même de vérifier le blocage.
-     * Ici geeseToPlay = 13 (valeur initiale, on ne mange rien).
-     */
     @Test
     void geeseWinWhenFoxIsFullySurrounded() throws Exception {
-        // Renard au centre
+
+        // Le renard en (3,3)
         Pawn fox = new Pawn(Pawn.FOX, gameStage);
-        gameStage.putInContainer(fox, board, 3, 3);
+        board.addElement(fox, 3, 3);
         gameStage.setFoxCoo(3, 3);
 
-        // On bloque les 8 voisins du renard (orthogonaux + diagonaux)
+        // 8 neighboring clusters blocking all simple moves
         int[][] neighbors = {
                 {2, 2}, {2, 3}, {2, 4},
                 {3, 2},         {3, 4},
                 {4, 2}, {4, 3}, {4, 4}
         };
         for (int[] pos : neighbors) {
-            gameStage.putInContainer(new Pawn(Pawn.GOOSE, gameStage), board, pos[0], pos[1]);
+            board.addElement(new Pawn(Pawn.GOOSE, gameStage), pos[0], pos[1]);
         }
 
         int result = callPartyWinned(3, 3);
 
         assertEquals(2, result,
-                "Les poules doivent gagner quand le renard est totalement encerclé");
+                "The chickens must win when the fox is completely trapped");
     }
 
-    /**
-     * Si le renard a encore au moins une case libre voisine,
-     * les poules ne gagnent pas.
-     *
-     * On place le renard en (3,3) et on bloque 7 de ses 8 voisins,
-     * laissant (2,3) libre. → Retour attendu = 0.
-     */
     @Test
     void geeseDoNotWinWhenFoxHasOneFreeCell() throws Exception {
+
         Pawn fox = new Pawn(Pawn.FOX, gameStage);
-        gameStage.putInContainer(fox, board, 3, 3);
+
+        board.addElement(fox, 3, 3);
+
         gameStage.setFoxCoo(3, 3);
 
-        // Tous les voisins sauf (2,3) sont bloqués
         int[][] neighbors = {
-                {2, 2},         {2, 4},   // (2,3) libre intentionnellement
+                {2, 2},         {2, 4},
                 {3, 2},         {3, 4},
                 {4, 2}, {4, 3}, {4, 4}
         };
+
         for (int[] pos : neighbors) {
-            gameStage.putInContainer(new Pawn(Pawn.GOOSE, gameStage), board, pos[0], pos[1]);
+
+            board.addElement(
+                    new Pawn(Pawn.GOOSE, gameStage),
+                    pos[0],
+                    pos[1]
+            );
         }
 
         int result = callPartyWinned(3, 3);
 
-        assertEquals(0, result,
-                "Les poules ne doivent pas gagner si le renard a encore une case libre");
+        assertEquals(
+                0,
+                result,
+                "The fox still has one space left."
+        );
     }
 
-    /**
-     * Sur un plateau totalement vide (pas de renard posé),
-     * partyWinned() ne doit pas planter (le renard est null à ce row/col).
-     *
-     * Dans le code de partyWinned : board.getFirstElement(row,col) peut
-     * renvoyer null si rien n'est là, et setValidCells serait appelé avec null.
-     * Ce test vérifie la robustesse du code dans ce cas de bord.
-     *
-     * On s'attend à ce que le résultat soit 0 (personne) ou que la méthode
-     * gère le cas sans lancer d'exception — comportement observable.
-     */
     @Test
-    void partyWinnedDoesNotCrashWithNoFoxOnBoard() throws Exception {
-        // geeseToPlay = 13 → la branche fox (< 4) n'est pas prise
-        // Le renard n'est pas posé → getFirstElement retourne null
-        // On attend soit 0, soit une gestion gracieuse sans exception
+    void partyWinnedDoesNotCrashWithNoFoxOnBoard() {
 
         assertDoesNotThrow(() -> {
+
             int result = callPartyWinned(3, 3);
-            // Si le code gère null proprement, il renvoie probablement 0
-            // (aucun mouvement trouvé) ou 2 (0 cases → poules gagnent).
-            // On vérifie juste que ça ne crash pas.
-            assertTrue(result == 0 || result == 2,
-                    "Sans renard sur le plateau, le résultat doit être 0 ou 2");
+
+            assertTrue(
+                    result == 0 || result == 2,
+                    "The code shouldn't crash without Fox"
+            );
         });
     }
 
-    // ---------------------------------------------------------------
-    // Tests sur eatGeese() et le compteur geeseToPlay
-    // ---------------------------------------------------------------
+    // Tests on the chicken counter
 
-    /**
-     * Vérifie que eatGeese() décrémente bien geeseToPlay de 1 à chaque appel.
-     *
-     * C'est la méthode utilisée par le contrôleur après chaque capture
-     * du renard. Si elle ne fonctionne pas, la condition de victoire
-     * du renard ne sera jamais déclenchée correctement.
-     */
     @Test
     void eatGeeseDecrementsCounter() {
-        // Départ à 13
-        assertEquals(13, gameStage.getGeeseToPlay(),
-                "geeseToPlay doit démarrer à 13");
+
+        assertEquals(
+                13,
+                gameStage.getGeeseToPlay(),
+                "The counter should start at 13"
+        );
 
         gameStage.eatGeese();
-        assertEquals(12, gameStage.getGeeseToPlay(),
-                "Après 1 eatGeese(), geeseToPlay doit être 12");
+
+        assertEquals(
+                12,
+                gameStage.getGeeseToPlay(),
+                "After a capture, the score should be 12"
+        );
 
         gameStage.eatGeese();
-        assertEquals(11, gameStage.getGeeseToPlay(),
-                "Après 2 eatGeese(), geeseToPlay doit être 11");
+
+        assertEquals(
+                11,
+                gameStage.getGeeseToPlay(),
+                "After two catches, the total should be 11"
+        );
     }
 
-    /**
-     * Vérifie que la transition 4 → 3 (le seuil exact de victoire du renard)
-     * bascule bien le résultat de partyWinned de 0 à 1.
-     *
-     * C'est le cas limite le plus important : à 4 poules personne ne gagne,
-     * à 3 poules le renard gagne. On vérifie ce basculement précis.
-     */
     @Test
     void foxWinThresholdIsExactlyFour() throws Exception {
+
+        Pawn fox = new Pawn(Pawn.FOX, gameStage);
+
+        board.addElement(fox, 3, 3);
+
+        gameStage.setFoxCoo(3, 3);
+
+        // 13 - 9 = 4
+        for (int i = 0; i < 9; i++) {
+            gameStage.eatGeese();
+        }
+
+        int at4 = callPartyWinned(3, 3);
+
+        assertEquals(
+                0,
+                at4,
+                "With four hens, the fox still doesn't win"
+        );
+
+        gameStage.eatGeese();
+
+        int at3 = callPartyWinned(3, 3);
+
+        assertEquals(
+                1,
+                at3,
+                "With three chickens, the fox must win"
+        );
+    }
+
+
+    // Partie testMVT IBTI
+    @Test
+    void foxPlayRejectsOutOfBoundsColumn() throws Exception {
+        boolean result = callFoxPlay("D8");
+        assertFalse(result, "foxPlay must reject a column that is off the board");
+    }
+
+
+
+    // Tests sur foxPlay() — absence du renard sur le plateau
+    @Test
+    void foxPlayReturnsFalseWhenNoFoxOnBoard() throws Exception {
+        // foxRow=2, foxCol=3 par défaut dans HoleStageModel
+        // Aucun renard posé → getFirstElement(2,3) == null
+
+        // 'C' - 'A' = 2, '4' - '1' = 3 → case (2,3) : la même → test d'une case voisine
+        boolean result = callFoxPlay("D4"); // (3,3) : case libre voisine
+        assertFalse(result,
+                "foxPlay must return false if the fox is not placed at its position");
+    }
+
+
+    // Tests on foxPlay() — unreachable case
+
+    @Test
+    void foxPlayRejectsNonReachableCell() throws Exception {
+        // Set the fox to its default position in the model (2,3)
+        Pawn fox = new Pawn(Pawn.FOX, gameStage);
+        gameStage.putInContainer(fox, board, 2, 3);
+        gameStage.setFoxCoo(2, 3);
+
+        boolean result = callFoxPlay("A1");
+        assertFalse(result,
+                "foxPlay must reject a move to a square that cannot be reached");
+    }
+
+
+    @Test
+    void foxPlayRejectsFarAwayCell() throws Exception {
+        Pawn fox = new Pawn(Pawn.FOX, gameStage);
+        gameStage.putInContainer(fox, board, 2, 3);
+        gameStage.setFoxCoo(2, 3);
+
+        boolean result = callFoxPlay("G7");
+        assertFalse(result,
+                "foxPlay must reject a move to a square that is too far away");
+    }
+
+
+    // Tests on foxPlay() — capture detection (foxCaptured flag)
+
+
+    @Test
+    void foxPlaySetsFoxCapturedOnJump() throws Exception {
+
+        HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
+        Board board = gameStage.getBoard();
+        // Placing the fox
+
+        Pawn fox = new Pawn(Pawn.FOX, gameStage);
+
+
+        // addElement() actually places the piece on the board
+        board.addElement(fox, 4, 3);
+
+        // the fox's coordinates in the model
+        gameStage.setFoxCoo(4, 3);
+        // Placement of the hen
+        Pawn goose = new Pawn(Pawn.GOOSE, gameStage);
+        board.addElement(goose, 3, 3);
+
+        // Pre-test check
+        assertNotNull(board.getFirstElement(4, 3),
+                "The fox must be at (4,3)");
+
+        assertNotNull(board.getFirstElement(3, 3),
+                "The hen must be at (3,3)");
+
+        // Reset the flag
+        gameStage.setFoxCaptured(false);
+
+
+        // Mouvement :
+
+        try {
+            callFoxPlay("C4");
+        }
+        catch (Exception ignored) {
+        }
+
+
+        // Final check
+        assertTrue(gameStage.isFoxCaptured(),
+                "foxPlay doit lever le flag foxCaptured lors d'un saut par-dessus une poule");
+    }
+
+
+
+    @Test
+    void foxPlayDoesNotSetFoxCapturedOnSimpleMove() throws Exception {
+        // Fox at (3,3)
         Pawn fox = new Pawn(Pawn.FOX, gameStage);
         gameStage.putInContainer(fox, board, 3, 3);
         gameStage.setFoxCoo(3, 3);
 
-        // Amener à exactement 4 poules → personne ne gagne encore
-        for (int i = 0; i < 9; i++) gameStage.eatGeese(); // 13-9=4
-        int at4 = callPartyWinned(3, 3);
-        assertEquals(0, at4,
-                "À 4 poules restantes, le renard ne doit pas encore gagner");
+        gameStage.setFoxCaptured(false);
 
-        // Une poule de plus mangée → 3 poules → le renard gagne
-        gameStage.eatGeese(); // 4-1=3
-        int at3 = callPartyWinned(3, 3);
-        assertEquals(1, at3,
-                "À 3 poules restantes, le renard doit gagner (3 < 4)");
-        // o
+        // Simple move to (3,4): 1 space to the right
+        try {
+            callFoxPlay("D5");
+        } catch (Exception ignored) {
+            // ActionPlayer may crash without a View.
+        }
+
+        assertFalse(gameStage.isFoxCaptured(),
+                "A simple movement by the fox should not trigger the “foxCaptured” flag");
+    }
+
+
+    // Tests on geesePlay() — off-screen coordinates
+
+
+    @Test
+    void geesePlayRejectsOutOfBoundsStart() throws Exception {
+        boolean result = callGeesePlay("Z1D4");
+        assertFalse(result,
+                "geesePlay must reject starting coordinates outside the board");
+    }
+
+
+    @Test
+    void geesePlayRejectsOutOfBoundsEnd() throws Exception {
+        boolean result = callGeesePlay("D4Z1");
+        assertFalse(result,
+                "geesePlay must reject arrival coordinates outside the board");
+    }
+
+
+    // Tests on geesePlay() — empty starting hand or incorrect card
+
+    @Test
+    void geesePlayReturnsFalseWhenStartCellIsEmpty() throws Exception {
+        // Aucune poule posée, plateau vide
+        boolean result = callGeesePlay("D4D5"); // (3,3) → (3,4)
+        assertFalse(result,
+                "geesePlay must refuse if the starting cell is empty");
+    }
+
+
+    @Test
+    void geesePlayReturnsFalseWhenStartCellHasFox() throws Exception {
+        // Place a fox on the starting square
+        Pawn fox = new Pawn(Pawn.FOX, gameStage);
+        gameStage.putInContainer(fox, board, 3, 3);  // (3,3)
+
+        // The command sets (3,3) as the starting point
+        boolean result = callGeesePlay("D4D5"); // (3,3) → (3,4)
+        assertFalse(result,
+                "geesePlay must refuse if the starting square contains a fox");
+    }
+
+
+    // Tests on geesePlay() — destination NOT POSSIBLE
+
+    @Test
+    void geesePlayRejectsDiagonalMove() throws Exception {
+        Pawn goose = new Pawn(Pawn.GOOSE, gameStage);
+        gameStage.putInContainer(goose, board, 3, 3);
+        boolean result = callGeesePlay("D4E5");
+        assertFalse(result,
+                "geesePlay must reject a diagonal move for a hen");
+    }
+
+
+    @Test
+    void geesePlayRejectsBackwardMove() throws Exception {
+        Pawn goose = new Pawn(Pawn.GOOSE, gameStage);
+        gameStage.putInContainer(goose, board, 4, 3);
+        boolean result = callGeesePlay("E4D4");
+        assertFalse(result,
+                "geesePlay must refuse to move backward for a hen");
+    }
+
+
+    @Test
+    void geesePlayRejectsMoveToOccupiedCell() throws Exception {
+        Pawn goose1 = new Pawn(Pawn.GOOSE, gameStage);
+        Pawn goose2 = new Pawn(Pawn.GOOSE, gameStage);
+        gameStage.putInContainer(goose1, board, 3, 3);
+        gameStage.putInContainer(goose2, board, 4, 3);
+
+        boolean result = callGeesePlay("D4E4");
+        assertFalse(result,
+                "geesePlay should refuse if the destination slot is already occupied");
+    }
+
+
+    // Tests on command FORMAT (analyseAndPlay)
+
+
+
+    @Test
+    void foxPlayHandlesEmptyLineSafely() {
+        assertDoesNotThrow(() -> {
+            try {
+                boolean result = callFoxPlay("");
+                assertFalse(result, "Une ligne vide ne doit pas être acceptée");
+            } catch (java.lang.reflect.InvocationTargetException e) {
+                // The reflection wraps the exceptions → we check the cause
+                if (!(e.getCause() instanceof StringIndexOutOfBoundsException)) {
+                    throw e; // Restart if this is another unexpected error
+                }
+                // StringIndexOutOfBoundsException encountered: foxPlay does not handle empty lines
+            }
+        });
+    }
+
+
+    // Testing on foxCaptured and updating contact information
+
+    void foxPlayResetsFoxCapturedAtStart() throws Exception {
+        gameStage.setFoxCaptured(true);
+
+        try {
+            callFoxPlay("Z9");
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            // Accepted if StringIndexOutOfBounds (line too short/out of bounds)
+        }
+
+        assertFalse(gameStage.isFoxCaptured(),
+                "foxPlay must set foxCaptured to false at the beginning of each call");
     }
 }

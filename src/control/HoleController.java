@@ -42,7 +42,7 @@ public class HoleController extends Controller {
         HoleStageModel gameStage = (HoleStageModel) model.getGameStage();
         consoleIn = new BufferedReader(new InputStreamReader(System.in));
         update();
-        while(! model.isEndStage()) {
+        while (!model.isEndStage()) {
             int whoWon = partyWinned(gameStage.getFoxRow(), gameStage.getFoxCol());
 
             if (whoWon == 1) {
@@ -88,7 +88,7 @@ public class HoleController extends Controller {
                     break;
                 }
 
-                System.out.println("Another capture is possible, it's still" +  model.getCurrentPlayer().getName() + "turn!");
+                System.out.println("Another capture is possible, it's still" + model.getCurrentPlayer().getName() + "turn!");
             }
         } while (gameStage.isFoxCaptured());
     }
@@ -146,6 +146,7 @@ public class HoleController extends Controller {
      */
     @Override
     public void endOfTurn() {
+
         model.setNextPlayer();
         // get the new player to display its name
         Player p = model.getCurrentPlayer();
@@ -274,8 +275,8 @@ public class HoleController extends Controller {
             System.out.println("It's the geese's turn !");
             return false;
         }
-        // debug
-        System.out.println("Cases valides pour la poule en " + fromR + "," + fromC + " :");
+        // debug output
+        System.out.println("Valid cells for the goose at " + fromR + "," + fromC + " :");
         for (int r = 0; r < 7; r++) {
             for (int c = 0; c < 7; c++) {
                 System.out.print(board.getReachableCells()[r][c] ? "1" : "0");
@@ -328,4 +329,6 @@ public class HoleController extends Controller {
 
         return whoWon;
     }
+
+
 }
