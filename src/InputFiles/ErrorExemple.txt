@@ -1,0 +1,16 @@
+# this file show most of the error managed by the game
+
+# this one is for the fox, when it tries wrong coordinates
+c3
+C5
+# this one is when the geese try to play the fox
+C5C4
+# this one is when the geese don't use the good input format
+E3
+# this one is when the geese try a move where there is no goose
+D1C1
+# this one is when an impossible move is give to the geese
+E1D2
+# again a format error, but from a different nature
+e2d2
+stop

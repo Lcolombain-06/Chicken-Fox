@@ -1,0 +1,10 @@
+# this file show a bug within the multi-capture feature
+C3
+E3D3
+D2
+E5D5
+# the fox made a capture and another one is possible
+D4
+# instead of capturing the second time it goes to another free cell
+C4
+STOP
