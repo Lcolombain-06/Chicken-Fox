@@ -35,7 +35,7 @@ public class FGController extends Controller {
 
         // Instancier et enregistrer le contrôleur souris dans Boardifier
         // C'est Boardifier qui branchera automatiquement les événements JavaFX
-        FGControllerMouse mouseController = new FGControllerMouse(model, view, this, 700);
+        FGControllerMouse mouseController = new FGControllerMouse(model, view, this);
         this.mouseController = mouseController;
     }
 
@@ -48,7 +48,7 @@ public class FGController extends Controller {
      *   - lancer l'IA si c'est son tour
      */
     @Override
-    public void nextPlayer() {
+    public void endOfTurn() {
 
         // --- 1. Vérifier les conditions de victoire AVANT de changer de joueur ---
         FGStageModel stage = (FGStageModel) model.getGameStage();

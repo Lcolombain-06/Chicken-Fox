@@ -5,12 +5,15 @@ import boardifier.view.View;
 import control.FGController;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
-import model.FGStageModel;
-import view.BoardRender;
+import view.FGRootPane;
 
+/**
+ * MainApp — point d'entrée de la version graphique.
+ *
+ * Beaucoup plus simple maintenant : Boardifier gère tout l'affichage
+ * via les looks. Plus besoin de BoardRenderer ni d'ImageView manuel.
+ */
 public class MainApp extends Application {
 
     public static final int WIDTH  = 700;
@@ -19,41 +22,26 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            // --- Initialisation du jeu ---
             Model model = new Model();
-            model.addHumanPlayer("Player1");  // ← futur écran titre
+            model.addHumanPlayer("Player1");
             model.addHumanPlayer("Player2");
 
             StageFactory.registerModelAndView("Game", "model.FGStageModel", "view.FGStageView");
 
-            // Version graphique : View nécessite Stage + RootPane
-            RootPane rootPane = new RootPane();
+            FGRootPane rootPane = new FGRootPane();
+
+            // View gère elle-même la scène et le stage en interne
             View view = new View(model, primaryStage, rootPane);
 
-            // FGController instancie FGControllerMouse dans son constructeur
             FGController controller = new FGController(model, view);
             controller.setFirstStageName("Game");
             controller.startGame();
 
-            // --- Image du plateau par-dessus le RootPane ---
-            Image boardImage = new Image(getClass().getResourceAsStream("/board.png"));
-            ImageView boardView = new ImageView(boardImage);
-            boardView.setFitWidth(WIDTH);
-            boardView.setFitHeight(HEIGHT);
-            boardView.setPreserveRatio(true);
-
-            // On place l'image derrière les éléments Boardifier
-            rootPane.getChildren().add(0, boardView);
-
-            // Affichage initial des pions
-            FGStageModel stageModel = (FGStageModel) model.getGameStage();
-            BoardRender renderer = new BoardRender(rootPane, stageModel, WIDTH);
-            renderer.refresh();
-
-            // --- Scène ---
-            Scene scene = new Scene(rootPane, WIDTH, HEIGHT);
+            // Ne pas créer de nouvelle Scene — View s'en est déjà chargé
+            // Il suffit de configurer le stage et l'afficher
             primaryStage.setTitle("Fox & Geese");
-            primaryStage.setScene(scene);
+            primaryStage.setWidth(700);
+            primaryStage.setHeight(700);
             primaryStage.show();
 
         } catch (Exception e) {

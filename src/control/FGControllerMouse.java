@@ -7,61 +7,55 @@ import boardifier.control.ControllerMouse;
 import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.action.ActionList;
+import boardifier.view.ElementLook;
 import boardifier.view.View;
+import javafx.geometry.Bounds;
 import javafx.scene.input.MouseEvent;
 import model.Board;
 import model.FGStageModel;
 import model.Pawn;
 
-/**
- * FGControllerMouse — gère les clics souris.
- *
- * ControllerMouse de Boardifier est minimaliste : il branche automatiquement
- * handle() sur le RootPane via addEventFilter(), c'est tout.
- * La conversion pixel → cellule et la logique de sélection restent à notre charge.
- */
 public class FGControllerMouse extends ControllerMouse {
-
-    // !! Mêmes constantes que BoardRenderer et DebugGrid !!
-    private static final int MARGIN_LEFT   = 6;
-    private static final int MARGIN_TOP    = 5;
-    private static final int BOARD_PIXEL_W = 468;
-    private static final int BOARD_PIXEL_H = 468;
-    private static final double CELL_W = BOARD_PIXEL_W / 7.0;
-    private static final double CELL_H = BOARD_PIXEL_H / 7.0;
-
-    // Facteur d'échelle : taille fenêtre / taille originale du PNG (480)
-    private final double scale;
 
     // État du clic en deux temps pour les oies
     private Pawn selectedPawn = null;
 
-    public FGControllerMouse(Model model, View view, Controller control, int windowWidth) {
+    public FGControllerMouse(Model model, View view, Controller control) {
         super(model, view, control);
-        this.scale = windowWidth / 480.0;
     }
 
     @Override
     public void handle(MouseEvent event) {
-        // Conversion pixel → cellule (annuler le scale d'abord)
-        double unscaledX = event.getX() / scale;
-        double unscaledY = event.getY() / scale;
+        FGStageModel stage = (FGStageModel) model.getGameStage();
+        Board board = stage.getBoard();
 
-        int col = (int)((unscaledX - MARGIN_LEFT) / CELL_W);
-        int row = (int)((unscaledY - MARGIN_TOP)  / CELL_H);
+        // Récupérer la position et taille RÉELLES du BoardLook dans la scène
+        ElementLook boardLook = control.getElementLook(board);
+        if (boardLook == null) return;
+
+        Bounds b = boardLook.getGroup().localToScene(boardLook.getGroup().getBoundsInLocal());
+        double boardX = b.getMinX();
+        double boardY = b.getMinY();
+        double cellW  = b.getWidth()  / 7.0;
+        double cellH  = b.getHeight() / 7.0;
+
+        // Conversion pixel → cellule
+        double relX = event.getX() - boardX;
+        double relY = event.getY() - boardY;
+
+        int col = (int)(relX / cellW);
+        int row = (int)(relY / cellH);
+
+        System.out.println("Board : x=" + boardX + " y=" + boardY + " cellW=" + cellW + " cellH=" + cellH);
+        System.out.println("Clic relatif : relX=" + relX + " relY=" + relY + " --> [" + row + "," + col + "]");
 
         if (col < 0 || col > 6 || row < 0 || row > 6) return;
 
-        System.out.println("Clic --> [" + row + "," + col + "]");
-
-        FGStageModel stage = (FGStageModel) model.getGameStage();
-        Board board = stage.getBoard();
         int currentPlayer = model.getIdPlayer();
-
         if (currentPlayer == 0) {
             handleFoxTurn(stage, board, row, col);
         } else {
-            handleGooseTurn(board, row, col);
+            handleGooseTurn(stage, board, row, col);
         }
     }
 
@@ -79,7 +73,6 @@ public class FGControllerMouse extends ControllerMouse {
 
         ActionList actions = new ActionList();
 
-        // Vérifier si c'est un saut (capture)
         if (Math.abs(toRow - foxRow) == 2 || Math.abs(toCol - foxCol) == 2) {
             GameElement geeseToEat = board.getFirstElement(
                     (foxRow + toRow) / 2,
@@ -95,15 +88,12 @@ public class FGControllerMouse extends ControllerMouse {
 
         actions.addAll(ActionFactory.generateMoveWithinContainer(control, model, fox, toRow, toCol));
         stage.setFoxCoo(toRow, toCol);
-
-        // doEndOfTurn=true --> ActionPlayer appellera nextPlayer() dans FGController
         actions.setDoEndOfTurn(true);
         new ActionPlayer(model, control, actions).start();
     }
 
-    private void handleGooseTurn(Board board, int row, int col) {
+    private void handleGooseTurn(FGStageModel stage, Board board, int row, int col) {
         if (selectedPawn == null) {
-            // Premier clic : sélectionner une oie
             GameElement e = board.getElement(row, col);
             if (e == null || !(e instanceof Pawn) || !((Pawn) e).isGoose()) {
                 System.out.println("Aucune oie ici.");
@@ -115,10 +105,8 @@ public class FGControllerMouse extends ControllerMouse {
             System.out.println("Oie sélectionnée en [" + pos[0] + "," + pos[1] + "]");
 
         } else {
-            // Deuxième clic : destination
             int[] pos = board.getElementCell(selectedPawn);
 
-            // Clic sur la même oie = désélectionner
             if (row == pos[0] && col == pos[1]) {
                 selectedPawn = null;
                 board.clearValidCells();
