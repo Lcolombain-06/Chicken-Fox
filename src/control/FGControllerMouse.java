@@ -39,7 +39,7 @@ public class FGControllerMouse extends ControllerMouse {
         double cellW  = b.getWidth()  / 7.0;
         double cellH  = b.getHeight() / 7.0;
 
-        // Conversion pixel → cellule
+        // Conversion pixel --> cellule
         double relX = event.getX() - boardX;
         double relY = event.getY() - boardY;
 
@@ -93,6 +93,10 @@ public class FGControllerMouse extends ControllerMouse {
     }
 
     private void handleGooseTurn(FGStageModel stage, Board board, int row, int col) {
+        for (GameElement e : model.getGameStage().getElements()) {
+            if (e.isSelected()) e.unselect();
+        }
+
         if (selectedPawn == null) {
             GameElement e = board.getElement(row, col);
             if (e == null || !(e instanceof Pawn) || !((Pawn) e).isGoose()) {
@@ -103,11 +107,13 @@ public class FGControllerMouse extends ControllerMouse {
             int[] pos = board.getElementCell(selectedPawn);
             board.setValidCells(selectedPawn, pos[0], pos[1]);
             System.out.println("Oie sélectionnée en [" + pos[0] + "," + pos[1] + "]");
+            selectedPawn.select();
 
         } else {
             int[] pos = board.getElementCell(selectedPawn);
 
             if (row == pos[0] && col == pos[1]) {
+                selectedPawn.unselect();
                 selectedPawn = null;
                 board.clearValidCells();
                 System.out.println("Oie désélectionnée.");

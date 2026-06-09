@@ -8,30 +8,48 @@ import model.Pawn;
 
 public class PawnLook extends ElementLook {
 
-    private static final int SIZE = 50;
+    // Images normales
+    private static final Image FOX_IMAGE   = new Image("resources/Fox.png");
+    private static final Image GOOSE_IMAGE = new Image("resources/Geese.png");
+
+    // Images quand sélectionné
+    private static final Image FOX_SELECTED_IMAGE   = new Image("resources/FoxSelect.png");
+    private static final Image GOOSE_SELECTED_IMAGE = new Image("resources/GeeseSelect.png");
+
+    // Référence à l'ImageView pour pouvoir la modifier après render()
+    private ImageView imageView;
+    private boolean isFox;
 
     public PawnLook(GameElement element) {
-        super(element); // constructeur correct : juste l'element
+        super(element);
     }
 
     @Override
     protected void render() {
         Pawn pawn = (Pawn) element;
+        isFox = pawn.isFox();
 
-        String imagePath = pawn.isFox() ? "resources/Fox.png" : "resources/Geese.png";
-        Image image = new Image(imagePath);
+        imageView = new ImageView(isFox ? FOX_IMAGE : GOOSE_IMAGE);
+        imageView.setFitWidth(50);
+        imageView.setFitHeight(50);
+        imageView.setX(-15.5);
+        imageView.setY(-15.5);
 
-        ImageView imageView = new ImageView(image);
-        imageView.setFitWidth(SIZE);
-        imageView.setFitHeight(SIZE);
-        imageView.setX(0);
-        imageView.setY(0);
-
-        addNode(imageView); // obligatoire sinon invisible
+        addNode(imageView);
     }
 
     @Override
     public void onSelectionChange() {
-        // futur : ajouter un contour quand le pion est sélectionné
+        if (imageView == null) return;
+
+        if (element.isSelected()) {
+            // Pion sélectionné --> image alternative
+            imageView.setImage(isFox ? FOX_SELECTED_IMAGE : GOOSE_SELECTED_IMAGE);
+        } else {
+            // Pion désélectionné --> image normale
+            imageView.setImage(isFox ? FOX_IMAGE : GOOSE_IMAGE);
+        }
     }
+
+    public void onChange() { }
 }

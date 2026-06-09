@@ -24,7 +24,7 @@ public class MainApp extends Application {
         try {
             Model model = new Model();
             model.addHumanPlayer("Player1");
-            model.addHumanPlayer("Player2");
+            model.addComputerPlayer("Player2");
 
             StageFactory.registerModelAndView("Game", "model.FGStageModel", "view.FGStageView");
 

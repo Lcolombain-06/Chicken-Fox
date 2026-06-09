@@ -2,6 +2,7 @@ package control;
 
 import boardifier.control.ActionPlayer;
 import boardifier.control.Controller;
+import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.Player;
 import boardifier.view.View;
@@ -49,6 +50,9 @@ public class FGController extends Controller {
      */
     @Override
     public void endOfTurn() {
+        for (GameElement e : model.getGameStage().getElements()) {
+            if (e.isSelected()) e.unselect();
+        }
 
         // --- 1. Vérifier les conditions de victoire AVANT de changer de joueur ---
         FGStageModel stage = (FGStageModel) model.getGameStage();
