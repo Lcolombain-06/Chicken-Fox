@@ -218,7 +218,7 @@ public class FoxDecider extends Decider {
         }
 
         // Add the movement action to the list
-        actions.addAll(ActionFactory.generateMoveWithinContainer(model, fox, bestMove[0], bestMove[1]));
+        actions.addAll(ActionFactory.generateMoveWithinContainer(control, model, fox, bestMove[0], bestMove[1]));
 
         stage.setFoxCoo(bestMove[0], bestMove[1]);
         actions.setDoEndOfTurn(true);

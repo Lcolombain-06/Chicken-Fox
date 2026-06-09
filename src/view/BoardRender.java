@@ -1,3 +1,5 @@
+package view;
+
 import boardifier.model.GameElement;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;

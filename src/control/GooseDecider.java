@@ -98,7 +98,7 @@ public class GooseDecider extends Decider {
         }
 
         // Create and return the movement action for the framework
-        ActionList actions = ActionFactory.generateMoveWithinContainer(model, bestPawn, bestRowDest, bestColDest);
+        ActionList actions = ActionFactory.generateMoveWithinContainer(control, model, bestPawn, bestRowDest, bestColDest);
         actions.setDoEndOfTurn(true);
         return actions;
     }
