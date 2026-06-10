@@ -2,18 +2,18 @@ package control;
 
 import boardifier.control.ActionPlayer;
 import boardifier.control.Controller;
+import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.Player;
 import boardifier.view.View;
 import model.Board;
 import model.FGStageModel;
 import model.Pawn;
-import view.FGRootPane;
 
 public class FGController extends Controller {
 
-    // Référence à control.MainApp pour afficher la fin de partie
-    private MainApp mainApp;
+    // Interface au lieu de MainApp directement → pas de problème de package
+    private GameEndListener gameEndListener;
 
     public FGController(Model model, View view) {
         super(model, view);
@@ -21,17 +21,14 @@ public class FGController extends Controller {
         setControlMouse(mouseController);
     }
 
-    /**
-     * Permet à control.MainApp de s'enregistrer pour recevoir les événements de fin de partie.
-     */
-    public void setMainApp(MainApp mainApp) {
-        this.mainApp = mainApp;
+    public void setGameEndListener(GameEndListener listener) {
+        this.gameEndListener = listener;
     }
 
     @Override
     public void endOfTurn() {
         // Désélectionner tout
-        for (boardifier.model.GameElement e : model.getGameStage().getElements()) {
+        for (GameElement e : model.getGameStage().getElements()) {
             if (e.isSelected()) e.unselect();
         }
 
@@ -42,16 +39,14 @@ public class FGController extends Controller {
         if (whoWon != 0) {
             String winnerName;
             if (whoWon == 1) {
-                winnerName = model.getPlayers().get(0).getName(); // Fox
+                winnerName = model.getPlayers().get(0).getName();
                 model.setIdWinner(0);
             } else {
-                winnerName = model.getPlayers().get(1).getName(); // Geese
+                winnerName = model.getPlayers().get(1).getName();
                 model.setIdWinner(1);
             }
             model.stopStage();
-
-            // Afficher la fenêtre de fin de partie via control.MainApp
-            if (mainApp != null) mainApp.showEndGame(winnerName);
+            if (gameEndListener != null) gameEndListener.showEndGame(winnerName);
             return;
         }
 
@@ -60,13 +55,12 @@ public class FGController extends Controller {
         Player p = model.getCurrentPlayer();
         stage.getPlayerName().setText(p.getName());
 
-        // Mettre à jour le label JavaFX du joueur courant
-        if (mainApp != null) {
-            FGRootPane rootPane = mainApp.getFGRootPane();
-            rootPane.setCurrentPlayer(p.getName(), model.getIdPlayer() == 0);
+        // Mettre à jour le label via l'interface
+        if (gameEndListener != null) {
+            gameEndListener.updateCurrentPlayer(p.getName(), model.getIdPlayer() == 0);
         }
 
-        // Sélectionner le renard visuellement si c'est son tour
+        // Sélectionner le renard si c'est son tour
         if (model.getIdPlayer() == 0) {
             stage.getFox()[0].select();
         }
@@ -76,12 +70,10 @@ public class FGController extends Controller {
             System.out.println("COMPUTER PLAYS");
             if (model.getIdPlayer() == 0) {
                 FoxDecider decider = new FoxDecider(model, this);
-                ActionPlayer play = new ActionPlayer(model, this, decider, null);
-                play.start();
+                new ActionPlayer(model, this, decider, null).start();
             } else {
                 GooseDecider decider = new GooseDecider(model, this);
-                ActionPlayer play = new ActionPlayer(model, this, decider, null);
-                play.start();
+                new ActionPlayer(model, this, decider, null).start();
             }
         }
     }

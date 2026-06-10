@@ -1,9 +1,9 @@
-package control;
-
 import boardifier.control.StageFactory;
 import boardifier.model.Model;
 import boardifier.model.Player;
 import boardifier.view.View;
+import control.FGController;
+import control.GameEndListener;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -13,7 +13,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import view.FGRootPane;
 
-public class MainApp extends Application {
+public class MainApp extends Application implements GameEndListener {
 
     public static final int WIDTH  = 700;
     public static final int HEIGHT = 750;
@@ -28,75 +28,52 @@ public class MainApp extends Application {
         this.primaryStage = primaryStage;
 
         rootPane = new FGRootPane();
+        rootPane.initPanes(); // ← doit être AVANT setOnAction
 
-        Scene scene = new Scene(rootPane.getGroup(), WIDTH, HEIGHT);
+        Scene scene = new Scene(rootPane, WIDTH, HEIGHT);
         primaryStage.setTitle("Fox & Geese");
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        // Bouton "New Game" → lire le formulaire et démarrer
-        rootPane.newGameButton.setOnAction(e -> startGame());
-
-        // Bouton "← Menu" → revenir à l'écran titre
-        rootPane.backToTitleButton.setOnAction(e -> {
+        // Ces lignes APRÈS initPanes() — les boutons existent maintenant
+        rootPane.getNewGameButton().setOnAction(e -> startGame());
+        rootPane.getBackToTitleButton().setOnAction(e -> {
             if (controller != null) controller.stopGame();
             rootPane.showTitleScreen();
         });
     }
 
-    /**
-     * Lit le formulaire, configure le modèle et lance la partie.
-     */
     private void startGame() {
         try {
             model = new Model();
-
-            int nbHumans = rootPane.humanCountSpinner.getValue();
+            int nbHumans = rootPane.getHumanCount();
 
             if (nbHumans == 0) {
-                // Bot vs Bot
                 model.addComputerPlayer("Fox Bot");
                 model.addComputerPlayer("Geese Bot");
-
             } else if (nbHumans == 1) {
-                // 1 humain
-                boolean humanIsFox = rootPane.foxHumanRadio.isSelected();
-                String humanName = rootPane.player1NameField.getText().trim();
-                if (humanName.isEmpty()) humanName = "Player";
-
-                if (humanIsFox) {
+                String humanName = rootPane.getPlayer1Name();
+                if (rootPane.isHumanFox()) {
                     model.addHumanPlayer(humanName);
                     model.addComputerPlayer("Geese Bot");
                 } else {
                     model.addComputerPlayer("Fox Bot");
                     model.addHumanPlayer(humanName);
                 }
-
             } else {
-                // 2 humains
-                String p1 = rootPane.player1NameField.getText().trim();
-                String p2 = rootPane.player2NameField.getText().trim();
-                if (p1.isEmpty()) p1 = "Player 1";
-                if (p2.isEmpty()) p2 = "Player 2";
-                model.addHumanPlayer(p1);
-                model.addHumanPlayer(p2);
+                model.addHumanPlayer(rootPane.getPlayer1Name());
+                model.addHumanPlayer(rootPane.getPlayer2Name());
             }
 
             StageFactory.registerModelAndView("Game", "model.FGStageModel", "view.FGStageView");
             View view = new View(model, primaryStage, rootPane);
-
             controller = new FGController(model, view);
             controller.setFirstStageName("Game");
+            controller.setGameEndListener(this);
             controller.startGame();
 
-            // Afficher le plateau Boardifier dans le centre de gamePane
-            rootPane.setBoardCenter(rootPane.getGroup().getChildren().get(0));
-
-            // Mettre à jour le label du joueur courant
             Player first = model.getCurrentPlayer();
             rootPane.setCurrentPlayer(first.getName(), model.getIdPlayer() == 0);
-
-            // Passer à l'écran de jeu
             rootPane.showGameScreen();
 
         } catch (Exception ex) {
@@ -105,16 +82,13 @@ public class MainApp extends Application {
         }
     }
 
-    /**
-     * Affiche la fenêtre de fin de partie.
-     * Appelée depuis FGController.endOfTurn() quand la partie est terminée.
-     */
+    @Override
     public void showEndGame(String winnerName) {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.initStyle(StageStyle.UNDECORATED);
             alert.initOwner(primaryStage);
-            alert.setHeaderText("🎉 Congratulations!");
+            alert.setHeaderText("Congratulations!");
             alert.setContentText(winnerName + " won the game!");
 
             ButtonType newGame = new ButtonType("New Game");
@@ -132,8 +106,9 @@ public class MainApp extends Application {
         });
     }
 
-    public FGRootPane getFGRootPane() {
-        return rootPane;
+    @Override
+    public void updateCurrentPlayer(String name, boolean isFox) {
+        Platform.runLater(() -> rootPane.setCurrentPlayer(name, isFox));
     }
 
     public static void main(String[] args) {

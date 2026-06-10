@@ -10,45 +10,45 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 
-/**
- * FGRootPane — gère les deux écrans de l'application :
- *   - titlePane  : écran titre avec formulaire de configuration
- *   - gamePane   : écran de jeu avec menu et plateau
- *
- * Les deux panneaux sont empilés dans le group de RootPane.
- * On affiche l'un ou l'autre via show/hide.
- */
 public class FGRootPane extends RootPane {
 
     // --- Écran titre ---
     private VBox titlePane;
-    public TextField player1NameField;
-    public TextField player2NameField;
-    public Spinner<Integer> humanCountSpinner;
-    public ToggleGroup foxPlayerGroup;
-    public RadioButton foxHumanRadio;
-    public RadioButton foxBotRadio;
-    public Button newGameButton;
+    private TextField player1NameField;
+    private TextField player2NameField;
+    private Spinner<Integer> humanCountSpinner;
+    private ToggleGroup foxPlayerGroup;
+    private RadioButton foxHumanRadio;
+    private Button newGameButton;
 
     // --- Écran de jeu ---
     private BorderPane gamePane;
-    public Label currentPlayerLabel;
-    public Button backToTitleButton;
+    private Label currentPlayerLabel;
+    private Button backToTitleButton;
 
     public FGRootPane() {
         super();
+        // Ne rien faire ici — initPanes() sera appelé depuis MainApp
+        // après que RootPane ait fini son initialisation
     }
 
     @Override
-    public void createDefaultGroup() {
-        // Fond noir général
+    protected void createDefaultGroup() {
+        // On laisse RootPane faire son initialisation normale
+        // Nos panneaux seront ajoutés après via initPanes()
         group.getChildren().clear();
+    }
 
+    /**
+     * Initialise et ajoute les panneaux JavaFX.
+     * DOIT être appelé depuis MainApp.start() après new FGRootPane().
+     */
+    public void initPanes() {
         createTitlePane();
         createGamePane();
 
-        // Au démarrage, afficher l'écran titre
-        group.getChildren().addAll(titlePane, gamePane);
+        // Ajouter les panneaux PAR-DESSUS le group de Boardifier
+        getChildren().addAll(titlePane, gamePane);
         showTitleScreen();
     }
 
@@ -62,7 +62,6 @@ public class FGRootPane extends RootPane {
         titlePane.setPadding(new Insets(40));
         titlePane.setStyle("-fx-background-color: #1a1a2e;");
 
-        // Titre du jeu
         Text title = new Text("FOX & GEESE");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 48));
         title.setFill(Color.web("#e94560"));
@@ -71,16 +70,13 @@ public class FGRootPane extends RootPane {
         subtitle.setFont(Font.font("Arial", 16));
         subtitle.setFill(Color.web("#a8a8b3"));
 
-        // Séparateur
         Separator sep = new Separator();
         sep.setPrefWidth(400);
 
-        // --- Formulaire ---
         VBox form = new VBox(15);
         form.setAlignment(Pos.CENTER);
         form.setMaxWidth(400);
 
-        // Nombre de joueurs humains
         HBox humanCountBox = new HBox(15);
         humanCountBox.setAlignment(Pos.CENTER_LEFT);
         Label humanCountLabel = new Label("Human players :");
@@ -91,7 +87,6 @@ public class FGRootPane extends RootPane {
         humanCountSpinner.valueProperty().addListener((obs, oldVal, newVal) -> updateFormVisibility(newVal));
         humanCountBox.getChildren().addAll(humanCountLabel, humanCountSpinner);
 
-        // Qui joue le renard ? (visible si 1 humain)
         VBox foxChoiceBox = new VBox(8);
         Label foxLabel = new Label("Who plays the Fox ?");
         foxLabel.setTextFill(Color.WHITE);
@@ -100,15 +95,12 @@ public class FGRootPane extends RootPane {
         foxHumanRadio.setTextFill(Color.web("#f5a623"));
         foxHumanRadio.setToggleGroup(foxPlayerGroup);
         foxHumanRadio.setSelected(true);
-        foxBotRadio = new RadioButton("Bot");
+        RadioButton foxBotRadio = new RadioButton("Bot");
         foxBotRadio.setTextFill(Color.web("#a8a8b3"));
         foxBotRadio.setToggleGroup(foxPlayerGroup);
-        HBox radioBox = new HBox(20, foxHumanRadio, foxBotRadio);
-        foxChoiceBox.getChildren().addAll(foxLabel, radioBox);
+        foxChoiceBox.getChildren().addAll(foxLabel, new HBox(20, foxHumanRadio, foxBotRadio));
 
-        // Noms des joueurs
         VBox namesBox = new VBox(10);
-
         HBox p1Box = new HBox(15);
         p1Box.setAlignment(Pos.CENTER_LEFT);
         Label p1Label = new Label("Fox player name :");
@@ -128,10 +120,8 @@ public class FGRootPane extends RootPane {
         p2Box.getChildren().addAll(p2Label, player2NameField);
 
         namesBox.getChildren().addAll(p1Box, p2Box);
-
         form.getChildren().addAll(humanCountBox, foxChoiceBox, namesBox);
 
-        // Bouton New Game
         newGameButton = new Button("▶  NEW GAME");
         newGameButton.setStyle(
                 "-fx-background-color: #e94560;" +
@@ -143,17 +133,12 @@ public class FGRootPane extends RootPane {
         );
 
         titlePane.getChildren().addAll(title, subtitle, sep, form, newGameButton);
-
-        // Initialiser la visibilité selon la valeur par défaut (2 humains)
         updateFormVisibility(2);
     }
 
-    /**
-     * Adapte le formulaire selon le nombre de joueurs humains sélectionné.
-     */
     private void updateFormVisibility(int nbHumans) {
         if (titlePane == null) return;
-        VBox form = (VBox) titlePane.getChildren().get(3);
+        VBox form         = (VBox) titlePane.getChildren().get(3);
         VBox foxChoiceBox = (VBox) form.getChildren().get(1);
         VBox namesBox     = (VBox) form.getChildren().get(2);
         HBox p1Box        = (HBox) namesBox.getChildren().get(0);
@@ -175,7 +160,6 @@ public class FGRootPane extends RootPane {
         gamePane.setPrefSize(700, 750);
         gamePane.setStyle("-fx-background-color: #1a1a2e;");
 
-        // --- Menu en haut ---
         HBox menuBar = new HBox(10);
         menuBar.setPadding(new Insets(8, 15, 8, 15));
         menuBar.setAlignment(Pos.CENTER_LEFT);
@@ -188,11 +172,9 @@ public class FGRootPane extends RootPane {
                         "-fx-font-size: 14px;" +
                         "-fx-cursor: hand;"
         );
-
         menuBar.getChildren().add(backToTitleButton);
         gamePane.setTop(menuBar);
 
-        // --- Nom du joueur courant ---
         currentPlayerLabel = new Label("Current player : -");
         currentPlayerLabel.setTextFill(Color.WHITE);
         currentPlayerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
@@ -200,11 +182,14 @@ public class FGRootPane extends RootPane {
         BorderPane.setAlignment(currentPlayerLabel, Pos.CENTER);
         gamePane.setBottom(currentPlayerLabel);
 
-        // Le plateau de jeu (group de Boardifier) sera ajouté au centre par control.MainApp
+        // Le group de Boardifier au centre
+        StackPane center = new StackPane(group);
+        center.setStyle("-fx-background-color: #1a1a2e;");
+        gamePane.setCenter(center);
     }
 
     // =============================================
-    //  NAVIGATION ENTRE ÉCRANS
+    //  NAVIGATION
     // =============================================
     public void showTitleScreen() {
         titlePane.setVisible(true);
@@ -220,21 +205,24 @@ public class FGRootPane extends RootPane {
         gamePane.setManaged(true);
     }
 
-    /**
-     * Permet à control.MainApp de placer le plateau Boardifier au centre de l'écran de jeu.
-     */
-    public void setBoardCenter(javafx.scene.Node boardNode) {
-        StackPane center = new StackPane(boardNode);
-        center.setStyle("-fx-background-color: #1a1a2e;");
-        gamePane.setCenter(center);
+    public void setCurrentPlayer(String name, boolean isFox) {
+        currentPlayerLabel.setText((isFox ? "Fox" : "Geese") + " — " + name + "'s turn");
+        currentPlayerLabel.setTextFill(isFox ? Color.web("#f5a623") : Color.web("#4a90d9"));
     }
 
-    /**
-     * Met à jour le label du joueur courant.
-     */
-    public void setCurrentPlayer(String name, boolean isFox) {
-        String icon = isFox ? "🦊" : "🪿";
-        currentPlayerLabel.setText(icon + "  " + name + "'s turn");
-        currentPlayerLabel.setTextFill(isFox ? Color.web("#f5a623") : Color.web("#4a90d9"));
+    // =============================================
+    //  GETTERS
+    // =============================================
+    public Button  getNewGameButton()     { return newGameButton; }
+    public Button  getBackToTitleButton() { return backToTitleButton; }
+    public int     getHumanCount()        { return humanCountSpinner.getValue(); }
+    public boolean isHumanFox()           { return foxHumanRadio.isSelected(); }
+    public String  getPlayer1Name() {
+        String n = player1NameField.getText().trim();
+        return n.isEmpty() ? "Player 1" : n;
+    }
+    public String  getPlayer2Name() {
+        String n = player2NameField.getText().trim();
+        return n.isEmpty() ? "Player 2" : n;
     }
 }
