@@ -15,6 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class FGRootPane extends RootPane {
@@ -44,8 +45,23 @@ public class FGRootPane extends RootPane {
     private Runnable onQuitGame;
     private Runnable onRestartGame;
 
+    // Référence au stage pour restaurer la taille au retour au menu
+    private Stage primaryStage;
+    private double titleWidth;
+    private double titleHeight;
+
     public FGRootPane() {
         super();
+    }
+
+    /**
+     * À appeler depuis MainApp.start() juste après show(),
+     * pour que FGRootPane puisse restaurer lui-même la taille de la fenêtre.
+     */
+    public void setPrimaryStage(Stage stage, double width, double height) {
+        this.primaryStage = stage;
+        this.titleWidth   = width;
+        this.titleHeight  = height;
     }
 
     @Override
@@ -53,25 +69,33 @@ public class FGRootPane extends RootPane {
         // group sera attaché à boardContainer dans init()
     }
 
-    // Appelé par boardifier à chaque startGame() — on récupère la main après
     @Override
     public void init(GameStageView gameStageView) {
         super.init(gameStageView);
-        // super.init() a fait getChildren().clear() + add(group)
-        // On remet notre hiérarchie et on accroche group au bon endroit
         getChildren().setAll(titlePane, gamePane);
         boardContainer.getChildren().setAll(group);
+
+        if (backToTitleButton != null && onQuitGame    != null)
+            backToTitleButton.setOnAction(e -> onQuitGame.run());
+        if (restartButton     != null && onRestartGame != null)
+            restartButton.setOnAction(e -> onRestartGame.run());
     }
 
     public void initPanes() {
+        // Fond sombre sur le RootPane pour éviter la zone grise
+        setStyle("-fx-background-color: #1a1a2e;");
+
         createTitlePane();
         createGamePane();
 
-        // Les deux écrans remplissent toujours toute la fenêtre
         titlePane.prefWidthProperty().bind(widthProperty());
         titlePane.prefHeightProperty().bind(heightProperty());
+        titlePane.maxWidthProperty().bind(widthProperty());
+        titlePane.maxHeightProperty().bind(heightProperty());
         gamePane.prefWidthProperty().bind(widthProperty());
         gamePane.prefHeightProperty().bind(heightProperty());
+        gamePane.maxWidthProperty().bind(widthProperty());
+        gamePane.maxHeightProperty().bind(heightProperty());
 
         getChildren().setAll(titlePane, gamePane);
         showTitleScreen();
@@ -255,7 +279,6 @@ public class FGRootPane extends RootPane {
         playersBox.setAlignment(Pos.CENTER);
         formCard.getChildren().add(playersBox);
 
-        // START button (invisible, déclenché par l'image)
         newGameButton = new Button();
         newGameButton.setVisible(false);
         newGameButton.setManaged(false);
@@ -291,7 +314,6 @@ public class FGRootPane extends RootPane {
         gamePane = new BorderPane();
         gamePane.setStyle("-fx-background-color: #1a1a2e;");
 
-        // ── TOP BAR ──────────────────────────────────────────────────────────
         HBox menuBar = new HBox(15);
         menuBar.setPadding(new Insets(10, 15, 10, 15));
         menuBar.setAlignment(Pos.CENTER_LEFT);
@@ -323,7 +345,6 @@ public class FGRootPane extends RootPane {
         menuBar.getChildren().addAll(backToTitleButton, topTitle, restartButton);
         gamePane.setTop(menuBar);
 
-        // ── BOTTOM LABEL ─────────────────────────────────────────────────────
         currentPlayerLabel = new Label("Current player : -");
         currentPlayerLabel.setTextFill(Color.WHITE);
         currentPlayerLabel.setFont(Font.font("Courier New", FontWeight.BOLD, 15));
@@ -333,7 +354,6 @@ public class FGRootPane extends RootPane {
         currentPlayerLabel.setStyle("-fx-background-color: #0f0f23;");
         gamePane.setBottom(currentPlayerLabel);
 
-        // ── CENTER (board) ───────────────────────────────────────────────────
         boardContainer = new StackPane();
         boardContainer.setAlignment(Pos.CENTER);
         boardContainer.setStyle("-fx-background-color: #1a1a2e;");
@@ -344,6 +364,13 @@ public class FGRootPane extends RootPane {
     //  NAVIGATION
     // =============================================
     public void showTitleScreen() {
+        // Restaurer la taille de la fenêtre ici, au moment où on affiche
+        // l'écran titre — boardifier a forcément fini à ce stade
+        if (primaryStage != null) {
+            primaryStage.setWidth(titleWidth);
+            primaryStage.setHeight(titleHeight);
+        }
+
         titlePane.setVisible(true);  titlePane.setManaged(true);
         gamePane.setVisible(false);  gamePane.setManaged(false);
     }
@@ -354,7 +381,7 @@ public class FGRootPane extends RootPane {
     }
 
     public void setCurrentPlayer(String name, boolean isFox) {
-        currentPlayerLabel.setText((isFox ? "Fox" : " Geese") + " — " + name + "'s turn");
+        currentPlayerLabel.setText((isFox ? "Fox" : "Geese") + " — " + name + "'s turn");
         currentPlayerLabel.setTextFill(isFox ? Color.web("#f5a623") : Color.web("#4a90d9"));
     }
 

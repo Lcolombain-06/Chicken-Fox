@@ -30,6 +30,10 @@ public class MainApp extends Application implements GameEndListener {
         rootPane = new FGRootPane();
         rootPane.initPanes();
 
+        // Donner au rootPane la référence au stage pour qu'il puisse
+        // restaurer lui-même la taille au bon moment dans showTitleScreen()
+        rootPane.setPrimaryStage(primaryStage, WIDTH, HEIGHT);
+
         Scene scene = new Scene(rootPane, WIDTH, HEIGHT);
         primaryStage.setTitle("Fox & Geese");
         primaryStage.setScene(scene);
@@ -38,14 +42,10 @@ public class MainApp extends Application implements GameEndListener {
 
         rootPane.getNewGameButton().setOnAction(e -> startGame());
 
-        // Callbacks pour les boutons du gamePane (quitter + recommencer)
         rootPane.setMenuCallbacks(
                 () -> {                          // ← quitter
                     stopCurrentGame();
-                    rootPane.showTitleScreen();
-                    // CORRECTION 1 : différer d'un pulse pour laisser boardifier
-                    // terminer ses propres appels setWidth/Height avant de restaurer
-                    Platform.runLater(this::restoreWindowSize);
+                    rootPane.showTitleScreen();  // la restauration de taille est faite ici
                 },
                 () -> {                          // ← recommencer
                     stopCurrentGame();
@@ -97,16 +97,7 @@ public class MainApp extends Application implements GameEndListener {
             controller.stopGame();
             controller = null;
         }
-        // CORRECTION 2 : nullifier aussi le modèle pour que boardifier
-        // ne garde pas de fils/listeners accrochés à l'ancien modèle
         model = null;
-    }
-
-    // Remet la fenêtre à la taille de l'écran titre
-    // (boardifier peut l'avoir redimensionnée)
-    private void restoreWindowSize() {
-        primaryStage.setWidth(WIDTH);
-        primaryStage.setHeight(HEIGHT);
     }
 
     @Override
