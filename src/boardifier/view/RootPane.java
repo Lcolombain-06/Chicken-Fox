@@ -51,7 +51,7 @@ public class RootPane extends Pane {
      * It sorts them so that the element with the highest depth are put in first in the group.
      * So they will be hidden by elements with a lower depth.
      */
-    public final void init(GameStageView gameStageView) {
+    public void init(GameStageView gameStageView) {
         posInScene = group.localToScene(0,0); // get the position of the RootPane group within the scene
         if (gameStageView != null) {
             this.gameStageView = gameStageView;

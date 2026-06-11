@@ -19,8 +19,8 @@ public class FGStageView extends GameStageView {
     public FGStageView(String name, GameStageModel gameStageModel) {
         super(name, gameStageModel);
         // Dimensions de la zone d'affichage du stage en pixels
-        width = 700;
-        height = 700;
+        width = 600;
+        height = 600;
     }
 
     @Override
