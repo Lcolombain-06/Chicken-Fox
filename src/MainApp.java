@@ -32,7 +32,8 @@ public class MainApp extends Application implements GameEndListener {
         rootPane = new FGRootPane();
         rootPane.initPanes();
 
-        Scene scene = new Scene(rootPane, WIDTH, HEIGHT);
+        Scene scene = new Scene(rootPane);
+        primaryStage.setMaximized(true);
         primaryStage.setTitle("Fox & Geese");
         primaryStage.setScene(scene);
         primaryStage.show();
