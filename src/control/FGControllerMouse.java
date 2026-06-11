@@ -21,10 +21,10 @@ import java.util.List;
 
 public class FGControllerMouse extends ControllerMouse {
 
-    // File de coups planifiés pour le renard (clic droit)
+    // Queue of planned moves for the fox (right-click)
     private final List<int[]> foxMoveQueue = new ArrayList<>();
 
-    // État du clic en deux temps pour les oies
+    // Two-step click state for geese
     private Pawn selectedPawn = null;
 
     public FGControllerMouse(Model model, View view, Controller control) {
@@ -36,7 +36,7 @@ public class FGControllerMouse extends ControllerMouse {
         FGStageModel stage = (FGStageModel) model.getGameStage();
         Board board = stage.getBoard();
 
-        // Récupérer la position réelle du BoardLook dans la scène
+        // Get the actual position of the BoardLook in the scene
         ElementLook boardLook = control.getElementLook(board);
         if (boardLook == null) return;
 
@@ -58,10 +58,10 @@ public class FGControllerMouse extends ControllerMouse {
 
         if (currentPlayer == 0) {
             if (event.getButton() == MouseButton.SECONDARY) {
-                // Clic droit → ajouter la case à la file de planification
+                // Right-click → add the cell to the planning queue
                 handleFoxPlan(stage, board, row, col);
             } else if (event.getButton() == MouseButton.PRIMARY) {
-                // Clic gauche → confirmer et exécuter la séquence planifiée
+                // Left-click → confirm and execute the planned sequence
                 handleFoxConfirm(stage, board);
             }
         } else {
@@ -72,26 +72,26 @@ public class FGControllerMouse extends ControllerMouse {
     }
 
     /**
-     * Clic droit : ajoute une case à la file de déplacements du renard.
+     * Right-click: adds a cell to the fox's move queue.
      */
     private void handleFoxPlan(FGStageModel stage, Board board, int row, int col) {
         foxMoveQueue.add(new int[]{row, col});
-        System.out.println("Case ajoutée à la file : [" + row + "," + col + "] — file : " + foxMoveQueue.size() + " coup(s)");
+        System.out.println("Cell added to queue: [" + row + "," + col + "] — queue: " + foxMoveQueue.size() + " move(s)");
     }
 
     /**
-     * Clic gauche : confirme et exécute la séquence planifiée.
+     * Left-click: confirms and executes the planned sequence.
      *
-     * Logique :
-     * 1. Vérifier le premier coup — si invalide, annuler toute la séquence
-     * 2. Exécuter le coup
-     * 3. Si c'est une prise, vérifier le coup suivant dans la liste
-     * 4. Si le suivant est une prise valide, l'exécuter aussi
-     * 5. Continuer jusqu'à fin de liste, coup non-prise, ou coup invalide
+     * Logic:
+     * 1. Validate the first move — if invalid, cancel the whole sequence
+     * 2. Execute the move
+     * 3. If it is a capture, check the next move in the list
+     * 4. If the next move is also a valid capture, execute it too
+     * 5. Continue until end of list, a non-capture move, or an invalid move
      */
     private void handleFoxConfirm(FGStageModel stage, Board board) {
         if (foxMoveQueue.isEmpty()) {
-            System.out.println("Aucun coup planifié. Utilisez le clic droit pour planifier.");
+            System.out.println("No move planned. Use right-click to plan moves.");
             return;
         }
 
@@ -99,18 +99,18 @@ public class FGControllerMouse extends ControllerMouse {
         int currentRow = stage.getFoxRow();
         int currentCol = stage.getFoxCol();
 
-        // Vérifier et exécuter chaque coup de la file
+        // Validate and execute each move in the queue
         for (int i = 0; i < foxMoveQueue.size(); i++) {
             int[] move = foxMoveQueue.get(i);
             int toRow = move[0];
             int toCol = move[1];
 
-            // Calculer les cases valides depuis la position actuelle
+            // Calculate valid cells from the current position
             board.setValidCells(fox, currentRow, currentCol);
 
             if (!board.getReachableCells()[toRow][toCol]) {
-                // Coup invalide → annuler toute la séquence
-                System.out.println("Coup invalide en [" + toRow + "," + toCol + "] — séquence annulée.");
+                // Invalid move → cancel the whole sequence
+                System.out.println("Invalid move to [" + toRow + "," + toCol + "] — sequence cancelled.");
                 foxMoveQueue.clear();
                 board.clearValidCells();
                 return;
@@ -118,13 +118,13 @@ public class FGControllerMouse extends ControllerMouse {
 
             boolean isCapture = Math.abs(toRow - currentRow) == 2 || Math.abs(toCol - currentCol) == 2;
 
-            // Si ce n'est pas le premier coup et ce n'est pas une prise → arrêter
+            // If this is not the first move and it is not a capture → stop
             if (i > 0 && !isCapture) {
-                System.out.println("Coup non-prise après une capture en [" + toRow + "," + toCol + "] — séquence arrêtée.");
+                System.out.println("Non-capture move after a capture to [" + toRow + "," + toCol + "] — sequence stopped.");
                 break;
             }
 
-            // Construire et exécuter l'action
+            // Build and execute the action
             ActionList actions = new ActionList();
 
             if (isCapture) {
@@ -143,18 +143,18 @@ public class FGControllerMouse extends ControllerMouse {
             actions.addAll(ActionFactory.generateMoveWithinContainer(control, model, fox, toRow, toCol));
             stage.setFoxCoo(toRow, toCol);
 
-            // Dernier coup de la liste → fin du tour
+            // Last move in the list → end of turn
             boolean isLastMove = (i == foxMoveQueue.size() - 1);
             actions.setDoEndOfTurn(isLastMove);
 
             new ActionPlayer(model, control, actions).start();
-            System.out.println("Coup exécuté : [" + currentRow + "," + currentCol + "] → [" + toRow + "," + toCol + "]");
+            System.out.println("Move executed: [" + currentRow + "," + currentCol + "] → [" + toRow + "," + toCol + "]");
 
-            // Mettre à jour la position courante pour le prochain coup
+            // Update current position for the next move
             currentRow = toRow;
             currentCol = toCol;
 
-            // Si ce n'est pas une prise, on s'arrête après ce coup
+            // If this is not a capture, stop after this move
             if (!isCapture) break;
         }
 
@@ -166,14 +166,14 @@ public class FGControllerMouse extends ControllerMouse {
         if (selectedPawn == null) {
             GameElement e = board.getElement(row, col);
             if (e == null || !(e instanceof Pawn) || !((Pawn) e).isGoose()) {
-                System.out.println("Aucune oie ici.");
+                System.out.println("No goose here.");
                 return;
             }
             selectedPawn = (Pawn) e;
             int[] pos = board.getElementCell(selectedPawn);
             board.setValidCells(selectedPawn, pos[0], pos[1]);
             selectedPawn.select();
-            System.out.println("Oie sélectionnée en [" + pos[0] + "," + pos[1] + "]");
+            System.out.println("Goose selected at [" + pos[0] + "," + pos[1] + "]");
 
         } else {
             int[] pos = board.getElementCell(selectedPawn);
@@ -182,14 +182,14 @@ public class FGControllerMouse extends ControllerMouse {
                 selectedPawn.unselect();
                 selectedPawn = null;
                 board.clearValidCells();
-                System.out.println("Oie désélectionnée.");
+                System.out.println("Goose deselected.");
                 return;
             }
 
             board.setValidCells(selectedPawn, pos[0], pos[1]);
 
             if (!board.getReachableCells()[row][col]) {
-                System.out.println("Case non atteignable pour cette oie.");
+                System.out.println("Cell not reachable for this goose.");
                 selectedPawn.unselect();
                 selectedPawn = null;
                 board.clearValidCells();

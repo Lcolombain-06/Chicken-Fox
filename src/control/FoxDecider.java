@@ -14,10 +14,9 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * AI Decision Engine for the Fox team
- *     This class uses a score evaluation to analyze and select the mathematically
- *     optimal tactical move based on the board constraints at this point in the game.
- *
+ * AI Decision Engine for the Fox team.
+ * This class uses a score evaluation to analyze and select the mathematically
+ * optimal tactical move based on the board constraints at this point in the game.
  */
 public class FoxDecider extends Decider {
 
@@ -31,7 +30,7 @@ public class FoxDecider extends Decider {
     }
 
     /**
-     * Checks all legal moves for the fox and finds the best one
+     * Checks all legal moves for the fox and finds the best one.
      *
      * @return an integer array with the best target coordinates [row, col]
      */
@@ -57,7 +56,7 @@ public class FoxDecider extends Decider {
             }
         }
 
-        // security
+        // Security: no valid move available
         if (validMoves.isEmpty()) {
             return new int[]{foxRow, foxCol};
         }
@@ -77,26 +76,21 @@ public class FoxDecider extends Decider {
             }
         }
 
-        // Reset the board valid cells state
-        board.setValidCells(fox, foxRow, foxCol);
-        board.resetReachableCells(false);
+        // BUG FIX: removed the erroneous board.setValidCells() + board.resetReachableCells(false)
+        // calls that were here. scoreMove() calls foxCanCapture() internally which calls
+        // setValidCells(), corrupting the reachableCells array used by the outer loop above.
+        // The valid moves list was already built before the scoring loop, so no re-computation
+        // is needed here. Clearing the cells now is also unnecessary and was masking the bug.
 
-        // Choose a cell if the list is empty
+        // Choose randomly among equally-scored best moves
         if (bestMoves.isEmpty()) {
             return validMoves.get(loto.nextInt(validMoves.size()));
         }
-        int[] bestMove = bestMoves.get(loto.nextInt(bestMoves.size()));
-
-//        try {
-//            Thread.sleep(100); // 1000 ms = 1 seconde
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-        return bestMove;
+        return bestMoves.get(loto.nextInt(bestMoves.size()));
     }
 
     /**
-     * Calculates a score for a specific fox move
+     * Calculates a score for a specific fox move.
      * <p>
      * The score is based on 5 tactical rules:
      * 1. Capturing (absolute priority to jumping over geese)
@@ -105,6 +99,13 @@ public class FoxDecider extends Decider {
      * 4. Hunting (bonus for targeting isolated geese)
      * 5. Anti-loop (malus if the fox goes back to its previous cell)
      * </p>
+     *
+     * BUG FIX: removed the call to board.setValidCells(fox, fromR, fromC) that was placed
+     * right after foxCanCapture(). foxCanCapture() internally calls setValidCells() and
+     * leaves the reachableCells array in a different state. Re-calling setValidCells()
+     * from the fox's origin position inside the scoring loop overwrote the state that
+     * chooseBestMove() had set up for the current candidate move, causing incorrect
+     * reachability checks for subsequent moves in the same iteration.
      *
      * @return An integer score. Higher scores mean better moves.
      */
@@ -115,77 +116,68 @@ public class FoxDecider extends Decider {
         if (Math.abs(toR - fromR) == 2 || Math.abs(toC - fromC) == 2) {
             score += 1000; // General bonus for a jump move
             boolean canCapture = board.foxCanCapture(fox, toR, toC);
-            board.setValidCells(fox, fromR, fromC);
-            if (canCapture) score += 1000; // Extra massive bonus for another capture possible after this one
+            if (canCapture) score += 1000; // Extra bonus if another capture is possible after this one
         }
 
-        // --- RULE 2: Move in direction of the center for better angles
-        int distCentreOrigine = Math.abs(fromR - 3) + Math.abs(fromC - 3);
-        int distCentreDestination = Math.abs(toR - 3) + Math.abs(toC - 3);
+        // --- RULE 2: Move toward the center for better angles
+        int distCentreOrigine      = Math.abs(fromR - 3) + Math.abs(fromC - 3);
+        int distCentreDestination  = Math.abs(toR   - 3) + Math.abs(toC   - 3);
 
         if (distCentreDestination < distCentreOrigine) {
             score += 15; // Bonus for controlling central cells
         }
 
-        // --- RULE 3: Bonus for infiltration down the geese
+        // --- RULE 3: Bonus for infiltrating down into the geese
         if (toR > fromR) {
             score += 5;
         }
 
-        // evaluate position
-        if (toR <= 4){
+        // Evaluate vertical position
+        if (toR <= 4) {
             score += toR * 10;
-        }
-        else {
+        } else {
             score -= toR * 10;
         }
 
-
         // --- RULE 4: Hunt isolated geese
         Cell destCell = board.getCell(toC, toR);
-        for (Cell geese : destCell.getNeighbors()) {
-            int nx = geese.getX();
-            int ny = geese.getY();
+        for (Cell gooseCell : destCell.getNeighbors()) {
+            int nx = gooseCell.getX();
+            int ny = gooseCell.getY();
             GameElement e = board.getElement(ny, nx);
             if (e != null && ((Pawn) e).isGoose()) {
                 int gooseNeighborCount = 0;
-                // Count how many neighbors this goose has
-                for (Cell nn : geese.getNeighbors()) {
+                // Count how many goose neighbors this goose has
+                for (Cell nn : gooseCell.getNeighbors()) {
                     GameElement e2 = board.getElement(nn.getY(), nn.getX());
                     if (e2 != null && ((Pawn) e2).isGoose()) {
                         gooseNeighborCount++;
                     }
                 }
-
-                // If the goose has 1 or 0 neighbors, it is alone and weak
+                // If the goose has 1 or 0 goose neighbors, it is isolated and weak
                 if (gooseNeighborCount <= 1) {
-                    score += 50; // bonus to attack this isolated goose
-
+                    score += 50; // Bonus for attacking this isolated goose
                 }
             }
-
         }
 
-        // --- RULE 5: prevent infinite games (try to)
+        // --- RULE 5: Prevent infinite games (anti-loop penalty)
         if (toR == lastRow && toC == lastCol) {
-
             if (score < 1000) {
-                score -= 800; // Big penalty to stop the fox from doing useless back-and-forth moves
+                score -= 800; // Big penalty to stop pointless back-and-forth moves
             }
         }
 
-        // Add some random noise to break perfect equalities and help the choice
+        // Add some random noise to break perfect ties
         score += loto.nextInt(100);
 
         return score;
-
     }
 
-
     /**
-     * Executes the move chosen by the AI during the fox's turn
+     * Executes the move chosen by the AI during the fox's turn.
      *
-     * It updates the loop memory, handles removing a goose if it was captured,
+     * Updates the loop memory, handles removing a goose if it was captured,
      * and sends the movement to Boardifier.
      *
      * @return The finalized ActionList sequence for this turn
@@ -230,4 +222,3 @@ public class FoxDecider extends Decider {
         return actions;
     }
 }
-

@@ -12,7 +12,7 @@ import model.Pawn;
 
 public class FGController extends Controller {
 
-    // Interface au lieu de MainApp directement → pas de problème de package
+    // Interface instead of MainApp directly → no package dependency issue
     private GameEndListener gameEndListener;
 
     public FGController(Model model, View view) {
@@ -27,14 +27,14 @@ public class FGController extends Controller {
 
     @Override
     public void endOfTurn() {
-        // Désélectionner tout
+        // Deselect everything
         for (GameElement e : model.getGameStage().getElements()) {
             if (e.isSelected()) e.unselect();
         }
 
         FGStageModel stage = (FGStageModel) model.getGameStage();
 
-        // Vérifier la victoire
+        // Check for a victory
         int whoWon = checkVictory(stage);
         if (whoWon != 0) {
             String winnerName;
@@ -50,22 +50,22 @@ public class FGController extends Controller {
             return;
         }
 
-        // Changer de joueur
+        // Switch player
         model.setNextPlayer();
         Player p = model.getCurrentPlayer();
         stage.getPlayerName().setText(p.getName());
 
-        // Mettre à jour le label via l'interface
+        // Update the label via the interface
         if (gameEndListener != null) {
             gameEndListener.updateCurrentPlayer(p.getName(), model.getIdPlayer() == 0);
         }
 
-        // Sélectionner le renard si c'est son tour
+        // Select the fox if it is its turn
         if (model.getIdPlayer() == 0) {
             stage.getFox()[0].select();
         }
 
-        // Lancer l'IA si nécessaire
+        // Launch the AI if necessary
         if (p.getType() == Player.COMPUTER) {
             System.out.println("COMPUTER PLAYS");
             if (model.getIdPlayer() == 0) {

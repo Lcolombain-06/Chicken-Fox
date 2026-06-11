@@ -1,11 +1,11 @@
 package control;
 
 /**
- * Interface permettant à FGController de communiquer avec MainApp
- * sans dépendre directement de sa classe.
+ * Interface that allows FGController to communicate with MainApp
+ * without depending directly on its class.
  *
- * MainApp implémente cette interface, FGController ne connaît que l'interface.
- * Cela résout le problème de dépendance entre packages.
+ * MainApp implements this interface; FGController only knows the interface.
+ * This solves the cross-package dependency problem.
  */
 public interface GameEndListener {
     void showEndGame(String winnerName);
