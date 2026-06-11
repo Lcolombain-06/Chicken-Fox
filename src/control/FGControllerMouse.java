@@ -33,6 +33,9 @@ public class FGControllerMouse extends ControllerMouse {
 
     @Override
     public void handle(MouseEvent event) {
+        // CORRECTION : la partie est arrêtée (quit ou restart en cours), on ignore
+        if (model.getGameStage() == null) return;
+
         FGStageModel stage = (FGStageModel) model.getGameStage();
         Board board = stage.getBoard();
 
@@ -58,10 +61,8 @@ public class FGControllerMouse extends ControllerMouse {
 
         if (currentPlayer == 0) {
             if (event.getButton() == MouseButton.SECONDARY) {
-                // Clic droit → ajouter la case à la file de planification
                 handleFoxPlan(stage, board, row, col);
             } else if (event.getButton() == MouseButton.PRIMARY) {
-                // Clic gauche → confirmer et exécuter la séquence planifiée
                 handleFoxConfirm(stage, board);
             }
         } else {
@@ -81,13 +82,6 @@ public class FGControllerMouse extends ControllerMouse {
 
     /**
      * Clic gauche : confirme et exécute la séquence planifiée.
-     *
-     * Logique :
-     * 1. Vérifier le premier coup — si invalide, annuler toute la séquence
-     * 2. Exécuter le coup
-     * 3. Si c'est une prise, vérifier le coup suivant dans la liste
-     * 4. Si le suivant est une prise valide, l'exécuter aussi
-     * 5. Continuer jusqu'à fin de liste, coup non-prise, ou coup invalide
      */
     private void handleFoxConfirm(FGStageModel stage, Board board) {
         if (foxMoveQueue.isEmpty()) {
@@ -99,17 +93,14 @@ public class FGControllerMouse extends ControllerMouse {
         int currentRow = stage.getFoxRow();
         int currentCol = stage.getFoxCol();
 
-        // Vérifier et exécuter chaque coup de la file
         for (int i = 0; i < foxMoveQueue.size(); i++) {
             int[] move = foxMoveQueue.get(i);
             int toRow = move[0];
             int toCol = move[1];
 
-            // Calculer les cases valides depuis la position actuelle
             board.setValidCells(fox, currentRow, currentCol);
 
             if (!board.getReachableCells()[toRow][toCol]) {
-                // Coup invalide → annuler toute la séquence
                 System.out.println("Coup invalide en [" + toRow + "," + toCol + "] — séquence annulée.");
                 foxMoveQueue.clear();
                 board.clearValidCells();
@@ -118,13 +109,11 @@ public class FGControllerMouse extends ControllerMouse {
 
             boolean isCapture = Math.abs(toRow - currentRow) == 2 || Math.abs(toCol - currentCol) == 2;
 
-            // Si ce n'est pas le premier coup et ce n'est pas une prise → arrêter
             if (i > 0 && !isCapture) {
                 System.out.println("Coup non-prise après une capture en [" + toRow + "," + toCol + "] — séquence arrêtée.");
                 break;
             }
 
-            // Construire et exécuter l'action
             ActionList actions = new ActionList();
 
             if (isCapture) {
@@ -143,18 +132,15 @@ public class FGControllerMouse extends ControllerMouse {
             actions.addAll(ActionFactory.generateMoveWithinContainer(control, model, fox, toRow, toCol));
             stage.setFoxCoo(toRow, toCol);
 
-            // Dernier coup de la liste → fin du tour
             boolean isLastMove = (i == foxMoveQueue.size() - 1);
             actions.setDoEndOfTurn(isLastMove);
 
             new ActionPlayer(model, control, actions).start();
             System.out.println("Coup exécuté : [" + currentRow + "," + currentCol + "] → [" + toRow + "," + toCol + "]");
 
-            // Mettre à jour la position courante pour le prochain coup
             currentRow = toRow;
             currentCol = toCol;
 
-            // Si ce n'est pas une prise, on s'arrête après ce coup
             if (!isCapture) break;
         }
 
@@ -203,5 +189,14 @@ public class FGControllerMouse extends ControllerMouse {
             selectedPawn = null;
             board.clearValidCells();
         }
+    }
+
+    /**
+     * Appelé par FGController.stopGame() pour nettoyer l'état interne
+     * avant que le handler soit potentiellement encore déclenché.
+     */
+    public void reset() {
+        foxMoveQueue.clear();
+        selectedPawn = null;
     }
 }

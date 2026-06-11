@@ -216,7 +216,7 @@ public class FGRootPane extends RootPane {
         foxTitle2.setTextFill(Color.web("#F6B17A"));
         foxTitle2.setFont(Font.font("Courier New", FontWeight.BOLD, 18));
         foxGroup    = new ToggleGroup();
-        foxHumanBtn = createImageToggle("resources/title_icon.png");
+        foxHumanBtn = createImageToggle("resources/girl.png");
         foxBotBtn   = createImageToggle("resources/bot.png");
         foxHumanBtn.setToggleGroup(foxGroup); foxBotBtn.setToggleGroup(foxGroup);
         foxHumanBtn.setSelected(true);
@@ -237,8 +237,8 @@ public class FGRootPane extends RootPane {
         geeseTitle2.setTextFill(Color.web("#A7D7F9"));
         geeseTitle2.setFont(Font.font("Courier New", FontWeight.BOLD, 18));
         geeseGroup    = new ToggleGroup();
-        geeseHumanBtn = createCuteToggle("🧑");
-        geeseBotBtn   = createCuteToggle("🤖");
+        geeseHumanBtn = createImageToggle("resources/girl.png");
+        geeseBotBtn   = createImageToggle("resources/bot.png");
         geeseHumanBtn.setToggleGroup(geeseGroup); geeseBotBtn.setToggleGroup(geeseGroup);
         geeseHumanBtn.setSelected(true);
         HBox geeseButtons = new HBox(12, geeseHumanBtn, geeseBotBtn);
@@ -301,7 +301,7 @@ public class FGRootPane extends RootPane {
                         "-fx-border-width: 0 0 3 0;"
         );
 
-        ImageView quitImg = new ImageView(new Image("resources/title_icon.png"));
+        ImageView quitImg = new ImageView(new Image("resources/croix.png"));
         quitImg.setFitWidth(28); quitImg.setFitHeight(28);
         backToTitleButton = new Button();
         backToTitleButton.setGraphic(quitImg);
@@ -354,7 +354,7 @@ public class FGRootPane extends RootPane {
     }
 
     public void setCurrentPlayer(String name, boolean isFox) {
-        currentPlayerLabel.setText((isFox ? "🦊 Fox" : "🪿 Geese") + " — " + name + "'s turn");
+        currentPlayerLabel.setText((isFox ? "Fox" : " Geese") + " — " + name + "'s turn");
         currentPlayerLabel.setTextFill(isFox ? Color.web("#f5a623") : Color.web("#4a90d9"));
     }
 

@@ -12,12 +12,12 @@ import model.Pawn;
 
 public class FGController extends Controller {
 
-    // Interface au lieu de MainApp directement → pas de problème de package
     private GameEndListener gameEndListener;
+    private FGControllerMouse mouseController;
 
     public FGController(Model model, View view) {
         super(model, view);
-        FGControllerMouse mouseController = new FGControllerMouse(model, view, this);
+        mouseController = new FGControllerMouse(model, view, this);
         setControlMouse(mouseController);
     }
 
@@ -25,8 +25,26 @@ public class FGController extends Controller {
         this.gameEndListener = listener;
     }
 
+    /**
+     * Surcharge de stopGame() : on nettoie l'état du handler souris AVANT
+     * que boardifier détruise le stage, pour éviter que des clics résiduels
+     * sur la scène déclenchent handle() avec model.getGameStage() == null.
+     */
+    @Override
+    public void stopGame() {
+        // Réinitialiser la file et la sélection du handler souris
+        if (mouseController != null) {
+            mouseController.reset();
+        }
+        // Laisser boardifier faire son nettoyage (stop AnimationTimer, etc.)
+        super.stopGame();
+    }
+
     @Override
     public void endOfTurn() {
+        // CORRECTION : si la partie a déjà été arrêtée entre-temps, on ignore
+        if (model.getGameStage() == null) return;
+
         // Désélectionner tout
         for (GameElement e : model.getGameStage().getElements()) {
             if (e.isSelected()) e.unselect();
