@@ -6,6 +6,7 @@ import boardifier.model.GameElement;
 import boardifier.model.Model;
 import boardifier.model.Player;
 import boardifier.view.View;
+import javafx.application.Platform;
 import model.Board;
 import model.FGStageModel;
 import model.Pawn;
@@ -25,34 +26,21 @@ public class FGController extends Controller {
         this.gameEndListener = listener;
     }
 
-    /**
-     * Surcharge de stopGame() : on nettoie l'état du handler souris AVANT
-     * que boardifier détruise le stage, pour éviter que des clics résiduels
-     * sur la scène déclenchent handle() avec model.getGameStage() == null.
-     */
     @Override
     public void stopGame() {
-        // Réinitialiser la file et la sélection du handler souris
         if (mouseController != null) {
             mouseController.reset();
         }
-        // Laisser boardifier faire son nettoyage (stop AnimationTimer, etc.)
         super.stopGame();
     }
 
     @Override
     public void endOfTurn() {
-        // CORRECTION : si la partie a déjà été arrêtée entre-temps, on ignore
         if (model.getGameStage() == null) return;
-
-        // Désélectionner tout
-        for (GameElement e : model.getGameStage().getElements()) {
-            if (e.isSelected()) e.unselect();
-        }
 
         FGStageModel stage = (FGStageModel) model.getGameStage();
 
-        // Vérifier la victoire
+        // Vérifier la victoire AVANT de toucher aux sélections
         int whoWon = checkVictory(stage);
         if (whoWon != 0) {
             String winnerName;
@@ -73,15 +61,25 @@ public class FGController extends Controller {
         Player p = model.getCurrentPlayer();
         stage.getPlayerName().setText(p.getName());
 
-        // Mettre à jour le label via l'interface
         if (gameEndListener != null) {
             gameEndListener.updateCurrentPlayer(p.getName(), model.getIdPlayer() == 0);
         }
 
-        // Sélectionner le renard si c'est son tour
-        if (model.getIdPlayer() == 0) {
-            stage.getFox()[0].select();
-        }
+        // Différer les select/unselect sur le prochain pulse JavaFX
+        // pour ne pas interférer avec l'ActionPlayer encore en cours
+        Platform.runLater(() -> {
+            if (model.getGameStage() == null) return;
+
+            // Désélectionner tout
+            for (GameElement e : model.getGameStage().getElements()) {
+                if (e.isSelected()) e.unselect();
+            }
+
+            // Sélectionner le renard si c'est son tour
+            if (model.getIdPlayer() == 0) {
+                stage.getFox()[0].select();
+            }
+        });
 
         // Lancer l'IA si nécessaire
         if (p.getType() == Player.COMPUTER) {

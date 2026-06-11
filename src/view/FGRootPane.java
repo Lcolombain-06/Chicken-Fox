@@ -4,6 +4,7 @@ import boardifier.view.GameStageView;
 import boardifier.view.RootPane;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -29,7 +30,6 @@ public class FGRootPane extends RootPane {
 
     private ToggleButton foxHumanBtn;
     private ToggleButton foxBotBtn;
-
     private ToggleButton geeseHumanBtn;
     private ToggleButton geeseBotBtn;
     private Button newGameButton;
@@ -45,23 +45,55 @@ public class FGRootPane extends RootPane {
     private Runnable onQuitGame;
     private Runnable onRestartGame;
 
-    // Référence au stage pour restaurer la taille au retour au menu
+    // Taille de référence du menu titre
     private Stage primaryStage;
     private double titleWidth;
     private double titleHeight;
+
+    // Indique si on est sur l'écran titre (pour le listener de resize)
+    private boolean onTitleScreen = false;
 
     public FGRootPane() {
         super();
     }
 
     /**
-     * À appeler depuis MainApp.start() juste après show(),
-     * pour que FGRootPane puisse restaurer lui-même la taille de la fenêtre.
+     * À appeler depuis MainApp.start() après primaryStage.show().
+     * Installe un listener sur le Stage qui corrige la taille si boardifier
+     * la modifie alors qu'on est sur l'écran titre.
      */
     public void setPrimaryStage(Stage stage, double width, double height) {
         this.primaryStage = stage;
         this.titleWidth   = width;
         this.titleHeight  = height;
+
+        // Forcer aussi la prefSize de la root scene dès maintenant
+        Platform.runLater(() -> {
+            if (stage.getScene() != null) {
+                stage.getScene().getRoot().prefWidth(width);
+                stage.getScene().getRoot().prefHeight(height);
+            }
+        });
+
+        // Listener sur la largeur : si boardifier redimensionne pendant
+        // qu'on est sur l'écran titre, on remet immédiatement la bonne taille
+        stage.widthProperty().addListener((obs, oldW, newW) -> {
+            if (onTitleScreen && Math.abs(newW.doubleValue() - titleWidth) > 1.0) {
+                Platform.runLater(() -> {
+                    stage.setWidth(titleWidth);
+                    stage.setHeight(titleHeight);
+                });
+            }
+        });
+
+        stage.heightProperty().addListener((obs, oldH, newH) -> {
+            if (onTitleScreen && Math.abs(newH.doubleValue() - titleHeight) > 1.0) {
+                Platform.runLater(() -> {
+                    stage.setWidth(titleWidth);
+                    stage.setHeight(titleHeight);
+                });
+            }
+        });
     }
 
     @Override
@@ -82,7 +114,6 @@ public class FGRootPane extends RootPane {
     }
 
     public void initPanes() {
-        // Fond sombre sur le RootPane pour éviter la zone grise
         setStyle("-fx-background-color: #1a1a2e;");
 
         createTitlePane();
@@ -261,7 +292,7 @@ public class FGRootPane extends RootPane {
         geeseTitle2.setTextFill(Color.web("#A7D7F9"));
         geeseTitle2.setFont(Font.font("Courier New", FontWeight.BOLD, 18));
         geeseGroup    = new ToggleGroup();
-        geeseHumanBtn = createImageToggle("resources/girl.png");
+        geeseHumanBtn = createImageToggle("resources/girl2.png");
         geeseBotBtn   = createImageToggle("resources/bot.png");
         geeseHumanBtn.setToggleGroup(geeseGroup); geeseBotBtn.setToggleGroup(geeseGroup);
         geeseHumanBtn.setSelected(true);
@@ -336,7 +367,7 @@ public class FGRootPane extends RootPane {
         topTitle.setMaxWidth(Double.MAX_VALUE);
         topTitle.setAlignment(Pos.CENTER);
 
-        ImageView restartImg = new ImageView(new Image("resources/title_icon.png"));
+        ImageView restartImg = new ImageView(new Image("resources/load.png"));
         restartImg.setFitWidth(28); restartImg.setFitHeight(28);
         restartButton = new Button();
         restartButton.setGraphic(restartImg);
@@ -364,8 +395,10 @@ public class FGRootPane extends RootPane {
     //  NAVIGATION
     // =============================================
     public void showTitleScreen() {
-        // Restaurer la taille de la fenêtre ici, au moment où on affiche
-        // l'écran titre — boardifier a forcément fini à ce stade
+        // Activer le verrou de taille AVANT d'afficher le panneau
+        onTitleScreen = true;
+
+        // Restaurer immédiatement
         if (primaryStage != null) {
             primaryStage.setWidth(titleWidth);
             primaryStage.setHeight(titleHeight);
@@ -373,9 +406,20 @@ public class FGRootPane extends RootPane {
 
         titlePane.setVisible(true);  titlePane.setManaged(true);
         gamePane.setVisible(false);  gamePane.setManaged(false);
+
+        // Double sécurité : si boardifier redimensionne en retard, on corrige
+        Platform.runLater(() -> {
+            if (primaryStage != null) {
+                primaryStage.setWidth(titleWidth);
+                primaryStage.setHeight(titleHeight);
+            }
+        });
     }
 
     public void showGameScreen() {
+        // Désactiver le verrou : boardifier peut redimensionner librement en jeu
+        onTitleScreen = false;
+
         titlePane.setVisible(false); titlePane.setManaged(false);
         gamePane.setVisible(true);   gamePane.setManaged(true);
     }
