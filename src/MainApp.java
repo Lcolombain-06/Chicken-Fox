@@ -56,40 +56,77 @@ public class MainApp extends Application implements GameEndListener {
     }
 
     private void startGame() {
-        try {
-            model = new Model();
-            int nbHumans = rootPane.getHumanCount();
 
-            if (nbHumans == 0) {
+        try {
+
+            model = new Model();
+
+            boolean foxHuman   = rootPane.isFoxHuman();
+            boolean geeseHuman = rootPane.isGeeseHuman();
+
+            // 0 humain
+            if(!foxHuman && !geeseHuman) {
+
                 model.addComputerPlayer("Fox Bot");
                 model.addComputerPlayer("Geese Bot");
-            } else if (nbHumans == 1) {
-                String humanName = rootPane.getPlayer1Name();
-                if (rootPane.isHumanFox()) {
-                    model.addHumanPlayer(humanName);
-                    model.addComputerPlayer("Geese Bot");
-                } else {
-                    model.addComputerPlayer("Fox Bot");
-                    model.addHumanPlayer(humanName);
-                }
-            } else {
+            }
+
+            // Fox humain
+            else if(foxHuman && !geeseHuman) {
+
+                model.addHumanPlayer(rootPane.getPlayer1Name());
+                model.addComputerPlayer("Geese Bot");
+            }
+
+            // Geese humain
+            else if(!foxHuman && geeseHuman) {
+
+                model.addComputerPlayer("Fox Bot");
+                model.addHumanPlayer(rootPane.getPlayer2Name());
+            }
+
+            // 2 humains
+            else {
+
                 model.addHumanPlayer(rootPane.getPlayer1Name());
                 model.addHumanPlayer(rootPane.getPlayer2Name());
             }
 
-            StageFactory.registerModelAndView("Game", "model.FGStageModel", "view.FGStageView");
-            View view = new View(model, primaryStage, rootPane);
+            StageFactory.registerModelAndView(
+                    "Game",
+                    "model.FGStageModel",
+                    "view.FGStageView"
+            );
+
+            View view = new View(
+                    model,
+                    primaryStage,
+                    rootPane
+            );
+
             controller = new FGController(model, view);
+
             controller.setFirstStageName("Game");
             controller.setGameEndListener(this);
             controller.startGame();
 
             Player first = model.getCurrentPlayer();
-            rootPane.setCurrentPlayer(first.getName(), model.getIdPlayer() == 0);
+
+            rootPane.setCurrentPlayer(
+                    first.getName(),
+                    model.getIdPlayer() == 0
+            );
+
             rootPane.showGameScreen();
 
-        } catch (Exception ex) {
-            System.out.println("Erreur démarrage : " + ex.getMessage());
+        }
+        catch(Exception ex) {
+
+            System.out.println(
+                    "Erreur démarrage : "
+                            + ex.getMessage()
+            );
+
             ex.printStackTrace();
         }
     }
