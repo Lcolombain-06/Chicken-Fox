@@ -198,10 +198,10 @@ public class FGRootPane extends RootPane {
 
         // --- CORRECTION 2 : DropShadow via setEffect, pas -fx-effect dans setStyle ---
         formCard.setStyle(
-                "-fx-background-color: rgba(66,71,105,0.92);" +
+                "-fx-background-color: rgba(45,50,80,0.5);" +
                         "-fx-background-radius: 18;" +
                         "-fx-border-radius: 18;" +
-                        "-fx-border-color: #F6B17A;" +
+                        "-fx-border-color: rgba(6,87,94,0.35);" +
                         "-fx-border-width: 3;"
         );
         DropShadow shadow = new DropShadow();
@@ -238,8 +238,13 @@ public class FGRootPane extends RootPane {
         foxTitle2.setFont(Font.font("Courier New", FontWeight.BOLD, 18));
 
         foxGroup    = new ToggleGroup();
-        foxHumanBtn = createCuteToggle("🧑");
-        foxBotBtn   = createCuteToggle("🤖");
+        foxHumanBtn = createImageToggle(
+                "resources/title_icon.png"
+        );
+
+        foxBotBtn = createImageToggle(
+                "resources/bot.png"
+        );
         foxHumanBtn.setToggleGroup(foxGroup);
         foxBotBtn.setToggleGroup(foxGroup);
         foxHumanBtn.setSelected(true);
@@ -346,6 +351,58 @@ public class FGRootPane extends RootPane {
         if (foxHumanBtn.isSelected())   count++;
         if (geeseHumanBtn.isSelected()) count++;
         return count;
+    }
+
+
+    private ToggleButton createImageToggle(String imagePath) {
+
+        ToggleButton btn = new ToggleButton();
+
+        ImageView icon = new ImageView(
+                new Image(imagePath)
+        );
+
+        icon.setFitWidth(40);
+        icon.setFitHeight(40);
+        icon.setPreserveRatio(true);
+
+        btn.setGraphic(icon);
+
+        btn.setPrefSize(70, 70);
+
+        btn.setStyle(
+                "-fx-background-color:#424769;" +
+                        "-fx-background-radius:14;" +
+                        "-fx-border-radius:14;" +
+                        "-fx-border-color:#F6B17A;" +
+                        "-fx-border-width:2;"
+        );
+
+        btn.selectedProperty().addListener((obs, oldVal, selected) -> {
+
+            if(selected) {
+
+                btn.setStyle(
+                        "-fx-background-color:#F6B17A;" +
+                                "-fx-background-radius:14;" +
+                                "-fx-border-radius:14;" +
+                                "-fx-border-color:white;" +
+                                "-fx-border-width:3;"
+                );
+            }
+            else {
+
+                btn.setStyle(
+                        "-fx-background-color:#424769;" +
+                                "-fx-background-radius:14;" +
+                                "-fx-border-radius:14;" +
+                                "-fx-border-color:#F6B17A;" +
+                                "-fx-border-width:2;"
+                );
+            }
+        });
+
+        return btn;
     }
 
     // =============================================
