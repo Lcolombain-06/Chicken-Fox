@@ -1,0 +1,336 @@
+package control;
+
+import boardifier.control.ActionPlayer;
+import boardifier.model.GameElement;
+import boardifier.model.Model;
+import boardifier.model.Player;
+import boardifier.model.TextElement;
+import boardifier.view.View;
+import model.Board;
+import model.FGStageModel;
+import model.Pawn;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.MockedConstruction;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class FGControllerTest {
+
+    @Mock private Model model;
+    @Mock private View view;
+    @Mock private FGStageModel stage;
+    @Mock private Board board;
+    @Mock private Pawn fox;
+    @Mock private Player player;
+    @Mock private TextElement playerNameLabel;
+    @Mock private GameEndListener gameEndListener;
+
+    private FGController controller;
+
+    @BeforeEach
+    void setUp() {
+        // FGControllerMouse is constructed inside FGController's constructor.
+        // We intercept that construction so no real mouse controller is wired.
+        try (MockedConstruction<FGControllerMouse> ignored =
+                     mockConstruction(FGControllerMouse.class)) {
+            controller = new FGController(model, view);
+        }
+        controller.setGameEndListener(gameEndListener);
+
+        // Common stubs shared by all tests
+        when(model.getGameStage()).thenReturn(stage);
+        when(stage.getElements()).thenReturn(List.of());
+        when(stage.getBoard()).thenReturn(board);
+        when(stage.getFox()).thenReturn(new Pawn[]{fox});
+        when(stage.getFoxRow()).thenReturn(3);
+        when(stage.getFoxCol()).thenReturn(2);
+        when(stage.getPlayerName()).thenReturn(playerNameLabel);
+    }
+
+    // -------------------------------------------------------------------------
+    // checkVictory — fox wins (fewer than 4 geese left)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void endOfTurn_foxWins_whenGeeseCountBelowFour() {
+        when(stage.getGeeseToPlay()).thenReturn(3);
+        when(model.getPlayers()).thenReturn(List.of(player, mock(Player.class)));
+        when(player.getName()).thenReturn("Alice");
+        when(model.getIdPlayer()).thenReturn(0);
+
+        controller.endOfTurn();
+
+        verify(model).setIdWinner(0);
+        verify(model).stopStage();
+        verify(gameEndListener).showEndGame("Alice");
+        // Turn must not continue after a win
+        verify(model, never()).setNextPlayer();
+    }
+
+    @Test
+    void endOfTurn_foxWins_exactlyThreeGeese() {
+        // Boundary: 3 < 4 → fox wins
+        when(stage.getGeeseToPlay()).thenReturn(3);
+        when(model.getPlayers()).thenReturn(List.of(player, mock(Player.class)));
+        when(player.getName()).thenReturn("P1");
+        when(model.getIdPlayer()).thenReturn(0);
+
+        controller.endOfTurn();
+
+        verify(model).setIdWinner(0);
+    }
+
+    @Test
+    void endOfTurn_noFoxWin_whenGeeseCountEqualsFour() {
+        // Boundary: 4 is NOT < 4 → fall through to fox-move check
+        when(stage.getGeeseToPlay()).thenReturn(4);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(2); // fox can still move → no win
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("P1");
+        when(player.getType()).thenReturn(Player.HUMAN);
+        when(model.getIdPlayer()).thenReturn(1);
+
+        controller.endOfTurn();
+
+        verify(model, never()).stopStage();
+    }
+
+    // -------------------------------------------------------------------------
+    // checkVictory — geese win (fox is trapped)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void endOfTurn_geeseWin_whenFoxHasNoValidMoves() {
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(0); // no moves → geese win
+        when(model.getPlayers()).thenReturn(List.of(mock(Player.class), player));
+        when(player.getName()).thenReturn("Bob");
+        when(model.getIdPlayer()).thenReturn(1);
+
+        controller.endOfTurn();
+
+        verify(model).setIdWinner(1);
+        verify(model).stopStage();
+        verify(gameEndListener).showEndGame("Bob");
+        verify(model, never()).setNextPlayer();
+    }
+
+    @Test
+    void endOfTurn_noGeeseWin_whenFoxHasAtLeastOneMove() {
+        // Boundary: 1 move available → no win
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(1);
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("P1");
+        when(player.getType()).thenReturn(Player.HUMAN);
+        when(model.getIdPlayer()).thenReturn(1);
+
+        controller.endOfTurn();
+
+        verify(model, never()).stopStage();
+    }
+
+    // -------------------------------------------------------------------------
+    // endOfTurn — normal turn continuation (no victory)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void endOfTurn_switchesPlayer_whenNoVictory() {
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(2);
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("Claire");
+        when(player.getType()).thenReturn(Player.HUMAN);
+        when(model.getIdPlayer()).thenReturn(1);
+
+        controller.endOfTurn();
+
+        verify(model).setNextPlayer();
+        verify(playerNameLabel).setText("Claire");
+    }
+
+    @Test
+    void endOfTurn_updatesListenerWithCurrentPlayer() {
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(2);
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("Claire");
+        when(player.getType()).thenReturn(Player.HUMAN);
+        when(model.getIdPlayer()).thenReturn(1); // geese player → isFox = false
+
+        controller.endOfTurn();
+
+        verify(gameEndListener).updateCurrentPlayer("Claire", false);
+    }
+
+    @Test
+    void endOfTurn_updatesListener_isFoxTrue_whenIdPlayerIsZero() {
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(2);
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("Dave");
+        when(player.getType()).thenReturn(Player.HUMAN);
+        when(model.getIdPlayer()).thenReturn(0); // fox player
+
+        controller.endOfTurn();
+
+        verify(gameEndListener).updateCurrentPlayer("Dave", true);
+    }
+
+    // -------------------------------------------------------------------------
+    // endOfTurn — fox auto-selection
+    // -------------------------------------------------------------------------
+
+    @Test
+    void endOfTurn_selectsFox_whenFoxTurn() {
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(2);
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("Dave");
+        when(player.getType()).thenReturn(Player.HUMAN);
+        when(model.getIdPlayer()).thenReturn(0); // fox's turn
+
+        controller.endOfTurn();
+
+        verify(fox).select();
+    }
+
+    @Test
+    void endOfTurn_doesNotSelectFox_whenGeeseTurn() {
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(2);
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("Eve");
+        when(player.getType()).thenReturn(Player.HUMAN);
+        when(model.getIdPlayer()).thenReturn(1); // geese turn
+
+        controller.endOfTurn();
+
+        verify(fox, never()).select();
+    }
+
+    // -------------------------------------------------------------------------
+    // endOfTurn — AI dispatch
+    // -------------------------------------------------------------------------
+
+    @Test
+    void endOfTurn_launchesFoxDecider_whenComputerIsIdPlayerZero() {
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(2);
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("CPU");
+        when(player.getType()).thenReturn(Player.COMPUTER);
+        when(model.getIdPlayer()).thenReturn(0); // computer plays fox
+
+        try (MockedConstruction<FoxDecider> foxDecider = mockConstruction(FoxDecider.class);
+             MockedConstruction<ActionPlayer> actionPlayer = mockConstruction(ActionPlayer.class)) {
+
+            controller.endOfTurn();
+
+            // One FoxDecider and one ActionPlayer must have been created
+            assert foxDecider.constructed().size() == 1;
+            assert actionPlayer.constructed().size() == 1;
+            verify(actionPlayer.constructed().get(0)).start();
+        }
+    }
+
+    @Test
+    void endOfTurn_launchesGooseDecider_whenComputerIsIdPlayerOne() {
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(2);
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("CPU");
+        when(player.getType()).thenReturn(Player.COMPUTER);
+        when(model.getIdPlayer()).thenReturn(1); // computer plays geese
+
+        try (MockedConstruction<GooseDecider> gooseDecider = mockConstruction(GooseDecider.class);
+             MockedConstruction<ActionPlayer> actionPlayer = mockConstruction(ActionPlayer.class)) {
+
+            controller.endOfTurn();
+
+            assert gooseDecider.constructed().size() == 1;
+            assert actionPlayer.constructed().size() == 1;
+            verify(actionPlayer.constructed().get(0)).start();
+        }
+    }
+
+    @Test
+    void endOfTurn_doesNotLaunchAI_whenPlayerIsHuman() {
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(2);
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("Human");
+        when(player.getType()).thenReturn(Player.HUMAN);
+        when(model.getIdPlayer()).thenReturn(1);
+
+        try (MockedConstruction<ActionPlayer> actionPlayer = mockConstruction(ActionPlayer.class)) {
+            controller.endOfTurn();
+            assert actionPlayer.constructed().isEmpty();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // endOfTurn — element deselection
+    // -------------------------------------------------------------------------
+
+    @Test
+    void endOfTurn_unselects_onlySelectedElements() {
+        GameElement selected    = mock(GameElement.class);
+        GameElement notSelected = mock(GameElement.class);
+        when(selected.isSelected()).thenReturn(true);
+        when(notSelected.isSelected()).thenReturn(false);
+        when(stage.getElements()).thenReturn(List.of(selected, notSelected));
+
+        // Trigger a fast fox-win to short-circuit the rest of the method
+        when(stage.getGeeseToPlay()).thenReturn(2);
+        when(model.getPlayers()).thenReturn(List.of(player, mock(Player.class)));
+        when(player.getName()).thenReturn("Alice");
+        when(model.getIdPlayer()).thenReturn(0);
+
+        controller.endOfTurn();
+
+        verify(selected).unselect();
+        verify(notSelected, never()).unselect();
+    }
+
+    // -------------------------------------------------------------------------
+    // endOfTurn — null listener safety
+    // -------------------------------------------------------------------------
+
+    @Test
+    void endOfTurn_noNullPointer_whenListenerIsNull_andFoxWins() {
+        controller.setGameEndListener(null);
+        when(stage.getGeeseToPlay()).thenReturn(2);
+        when(model.getPlayers()).thenReturn(List.of(player, mock(Player.class)));
+        when(player.getName()).thenReturn("Alice");
+        when(model.getIdPlayer()).thenReturn(0);
+
+        // Must not throw
+        controller.endOfTurn();
+
+        verify(model).stopStage();
+    }
+
+    @Test
+    void endOfTurn_noNullPointer_whenListenerIsNull_andGameContinues() {
+        controller.setGameEndListener(null);
+        when(stage.getGeeseToPlay()).thenReturn(5);
+        when(board.setValidCells(fox, 3, 2)).thenReturn(2);
+        when(model.getCurrentPlayer()).thenReturn(player);
+        when(player.getName()).thenReturn("P1");
+        when(player.getType()).thenReturn(Player.HUMAN);
+        when(model.getIdPlayer()).thenReturn(1);
+
+        // Must not throw
+        controller.endOfTurn();
+
+        verify(model).setNextPlayer();
+    }
+}
