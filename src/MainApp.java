@@ -8,9 +8,10 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import view.FGRootPane;
 
 public class MainApp extends Application implements GameEndListener {
@@ -103,22 +104,59 @@ public class MainApp extends Application implements GameEndListener {
     @Override
     public void showEndGame(String winnerName) {
         Platform.runLater(() -> {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.initStyle(StageStyle.UNDECORATED);
+            // CORRECTION : arrêter le contrôleur/AnimationTimer AVANT d'afficher
+            // l'Alert, sinon le timer continue de tourner pendant showAndWait()
+            // et peut figer/empêcher les clics sur la popup.
+            stopCurrentGame();
+
+            Alert alert = new Alert(Alert.AlertType.NONE);
             alert.initOwner(primaryStage);
+            alert.setTitle("Fox & Geese");
             alert.setHeaderText("Congratulations!");
             alert.setContentText(winnerName + " won the game!");
 
-            ButtonType newGame = new ButtonType("New Game");
-            ButtonType quit    = new ButtonType("Quit");
+            ButtonType newGame = new ButtonType("New Game", ButtonType.OK.getButtonData());
+            ButtonType quit    = new ButtonType("Quit", ButtonType.CANCEL.getButtonData());
             alert.getButtonTypes().setAll(newGame, quit);
+
+            // ── Style de la popup : même vert que le plateau, boutons rose/vert ──
+            DialogPane pane = alert.getDialogPane();
+            pane.setStyle(
+                    "-fx-background-color: #013039;" +
+                            "-fx-border-color: rgba(2,21,37,0.77);" +
+                            "-fx-border-width: 3;"
+            );
+            pane.lookup(".header-panel").setStyle(
+                    "-fx-background-color: #013039;"
+            );
+            pane.lookup(".content.label").setStyle(
+                    "-fx-text-fill: white; -fx-font-family: 'Courier New'; -fx-font-size: 14px;"
+            );
+            // Le header-panel contient un Label pour le headerText
+            pane.lookup(".header-panel .label").setStyle(
+                    "-fx-text-fill: #e94560; -fx-font-family: 'Courier New';" +
+                            "-fx-font-weight: bold; -fx-font-size: 20px;"
+            );
+
+            String pinkBtn =
+                    "-fx-background-color: #e94560; -fx-text-fill: white;" +
+                            "-fx-font-family: 'Courier New'; -fx-font-weight: bold;" +
+                            "-fx-background-radius: 10; -fx-padding: 8 20;";
+            String greenBtn =
+                    "-fx-background-color: #4a90d9; -fx-text-fill: white;" +
+                            "-fx-font-family: 'Courier New'; -fx-font-weight: bold;" +
+                            "-fx-background-radius: 10; -fx-padding: 8 20;";
+
+            Button newGameBtn = (Button) pane.lookupButton(newGame);
+            Button quitBtn    = (Button) pane.lookupButton(quit);
+            newGameBtn.setStyle(pinkBtn);
+            quitBtn.setStyle(greenBtn);
 
             alert.showAndWait().ifPresent(choice -> {
                 if (choice == newGame) {
-                    stopCurrentGame();
                     startGame();
                 } else {
-                    Platform.exit();
+                    rootPane.showTitleScreen();
                 }
             });
         });
