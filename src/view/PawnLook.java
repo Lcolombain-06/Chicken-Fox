@@ -16,6 +16,14 @@ public class PawnLook extends ElementLook {
     private static final Image FOX_SELECTED_IMAGE   = new Image("resources/FoxSelect.png");
     private static final Image GOOSE_SELECTED_IMAGE = new Image("resources/GeeseSelect.png");
 
+    // CORRECTION : taille du pion agrandie pour suivre l'agrandissement
+    // du plateau (CELL_SIZE 68 -> 90 dans BoardLook). L'offset est recalculé
+    // pour rester centré dans la case : -(taille/2 + 0.5) comme avant
+    // (50 -> -15.5 correspondait à un centrage avec une marge de 9.5px
+    // de chaque côté pour une case de 68px, soit ~14% de la case).
+    private static final double PAWN_SIZE = 66; // ~14% de marge pour une case de 90px
+    private static final double OFFSET    = -(PAWN_SIZE / 2.0) + 0.5; // -32.5
+
     // Référence à l'ImageView pour pouvoir la modifier après render()
     private ImageView imageView;
     private boolean isFox;
@@ -30,10 +38,10 @@ public class PawnLook extends ElementLook {
         isFox = pawn.isFox();
 
         imageView = new ImageView(isFox ? FOX_IMAGE : GOOSE_IMAGE);
-        imageView.setFitWidth(50);
-        imageView.setFitHeight(50);
-        imageView.setX(-15.5);
-        imageView.setY(-15.5);
+        imageView.setFitWidth(PAWN_SIZE);
+        imageView.setFitHeight(PAWN_SIZE);
+        imageView.setX(OFFSET);
+        imageView.setY(OFFSET);
 
         addNode(imageView);
     }

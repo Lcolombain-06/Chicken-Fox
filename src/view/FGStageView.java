@@ -18,9 +18,12 @@ public class FGStageView extends GameStageView {
 
     public FGStageView(String name, GameStageModel gameStageModel) {
         super(name, gameStageModel);
-        // Dimensions de la zone d'affichage du stage en pixels
-        width = 600;
-        height = 600;
+        // CORRECTION : ces dimensions correspondent à la taille de la fenêtre
+        // (MainApp.WIDTH / MainApp.HEIGHT = 900x750). Avec height=900 précédent,
+        // boardifier redimensionnait le Stage à 900x900 à chaque startGame(),
+        // d'où l'agrandissement démesuré vers le bas au "recommencer".
+        width  = 900;
+        height = 750;
     }
 
     @Override

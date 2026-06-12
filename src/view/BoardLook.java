@@ -8,7 +8,12 @@ import model.Board;
 
 public class BoardLook extends GridLook {
 
-    private static final int CELL_SIZE = 68;
+    // CORRECTION : plateau agrandi de 68 -> 90px par case (476px -> 630px)
+    // GridLook utilise CELL_SIZE pour calculer la position de chaque pion,
+    // donc augmenter cette seule valeur agrandit le plateau ET déplace
+    // automatiquement les pions aux bonnes nouvelles positions, sans
+    // qu'ils ne se décalent par rapport aux cases.
+    private static final int CELL_SIZE = 88;
 
     public BoardLook(Board board) {
         super(CELL_SIZE, CELL_SIZE, board, 0, 0, Color.TRANSPARENT);

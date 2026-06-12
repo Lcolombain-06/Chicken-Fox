@@ -94,6 +94,21 @@ public class FGRootPane extends RootPane {
                 });
             }
         });
+
+        // Verrou global : quelle que soit la phase (titre ou jeu), la fenêtre
+        // ne doit jamais dépasser la taille de référence définie par MainApp.
+        // Cela empêche boardifier d'agrandir le Stage si un GameStageView
+        // déclare des dimensions plus grandes que la fenêtre.
+        stage.widthProperty().addListener((obs, oldW, newW) -> {
+            if (newW.doubleValue() > titleWidth + 1.0) {
+                Platform.runLater(() -> stage.setWidth(titleWidth));
+            }
+        });
+        stage.heightProperty().addListener((obs, oldH, newH) -> {
+            if (newH.doubleValue() > titleHeight + 1.0) {
+                Platform.runLater(() -> stage.setHeight(titleHeight));
+            }
+        });
     }
 
     @Override
@@ -222,10 +237,10 @@ public class FGRootPane extends RootPane {
             titlePane.setStyle("-fx-background-color: #1a1a2e;");
         }
 
-        Text title = new Text("FOX & GEESE");
-        title.setFont(Font.font("Courier New", FontWeight.BOLD, 48));
-        title.setFill(Color.web("#e94560"));
-        title.setStyle("-fx-effect: dropshadow(gaussian, black, 8, 0.6, 2, 2);");
+        ImageView title = new ImageView(new Image("resources/title.png"));
+        title.setFitWidth(500);
+        title.setFitHeight(300);
+        title.setPreserveRatio(true);
 
         Timeline floatAnim = new Timeline(
                 new KeyFrame(Duration.ZERO,         e -> title.setTranslateY(0)),
@@ -235,13 +250,6 @@ public class FGRootPane extends RootPane {
         floatAnim.setCycleCount(Timeline.INDEFINITE);
         floatAnim.play();
 
-        Text subtitle = new Text("A classic strategy game");
-        subtitle.setFont(Font.font("Courier New", 14));
-        subtitle.setFill(Color.WHITE);
-        subtitle.setStyle("-fx-effect: dropshadow(gaussian, black, 6, 0.8, 1, 1);");
-
-        Separator sep = new Separator();
-        sep.setPrefWidth(400);
 
         VBox formCard = new VBox(15);
         formCard.setAlignment(Pos.CENTER);
@@ -335,7 +343,7 @@ public class FGRootPane extends RootPane {
         btnFloat.setCycleCount(Timeline.INDEFINITE);
         btnFloat.play();
 
-        titlePane.getChildren().addAll(title, subtitle, sep, formCard, btnBox, newGameButton);
+        titlePane.getChildren().addAll(title, formCard, btnBox, newGameButton);
     }
 
     // =============================================
@@ -343,19 +351,19 @@ public class FGRootPane extends RootPane {
     // =============================================
     private void createGamePane() {
         gamePane = new BorderPane();
-        gamePane.setStyle("-fx-background-color: #1a1a2e;");
+        gamePane.setStyle("-fx-background-color: #013039;");
 
         HBox menuBar = new HBox(15);
         menuBar.setPadding(new Insets(10, 15, 10, 15));
         menuBar.setAlignment(Pos.CENTER_LEFT);
         menuBar.setStyle(
-                "-fx-background-color: #0f0f23;" +
-                        "-fx-border-color: #e94560;" +
+                "-fx-background-color: #013039;" +
+                        "-fx-border-color: rgba(2,21,37,0.77);" +
                         "-fx-border-width: 0 0 3 0;"
         );
 
         ImageView quitImg = new ImageView(new Image("resources/croix.png"));
-        quitImg.setFitWidth(28); quitImg.setFitHeight(28);
+        quitImg.setFitWidth(35); quitImg.setFitHeight(35);
         backToTitleButton = new Button();
         backToTitleButton.setGraphic(quitImg);
         backToTitleButton.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
@@ -368,7 +376,7 @@ public class FGRootPane extends RootPane {
         topTitle.setAlignment(Pos.CENTER);
 
         ImageView restartImg = new ImageView(new Image("resources/load.png"));
-        restartImg.setFitWidth(28); restartImg.setFitHeight(28);
+        restartImg.setFitWidth(35); restartImg.setFitHeight(35);
         restartButton = new Button();
         restartButton.setGraphic(restartImg);
         restartButton.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
@@ -382,12 +390,12 @@ public class FGRootPane extends RootPane {
         currentPlayerLabel.setPadding(new Insets(8));
         currentPlayerLabel.setMaxWidth(Double.MAX_VALUE);
         currentPlayerLabel.setAlignment(Pos.CENTER);
-        currentPlayerLabel.setStyle("-fx-background-color: #0f0f23;");
+        currentPlayerLabel.setStyle("-fx-background-color: #013039;");
         gamePane.setBottom(currentPlayerLabel);
 
         boardContainer = new StackPane();
         boardContainer.setAlignment(Pos.CENTER);
-        boardContainer.setStyle("-fx-background-color: #1a1a2e;");
+        boardContainer.setStyle("-fx-background-color: rgba(1,48,57,0.63);");
         gamePane.setCenter(boardContainer);
     }
 
