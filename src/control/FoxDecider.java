@@ -87,11 +87,11 @@ public class FoxDecider extends Decider {
         }
         int[] bestMove = bestMoves.get(loto.nextInt(bestMoves.size()));
 
-//        try {
-//            Thread.sleep(100); // 1000 ms = 1 seconde
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+     try {
+          Thread.sleep(100); // 1000 ms = 1 seconde
+      } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
         return bestMove;
     }
 
