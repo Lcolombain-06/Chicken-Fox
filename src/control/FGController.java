@@ -37,15 +37,11 @@ public class FGController extends Controller {
 
     @Override
     public void endOfTurn() {
-        // Deselect everything
-        for (GameElement e : model.getGameStage().getElements()) {
-            if (e.isSelected()) e.unselect();
-        }
         if (model.getGameStage() == null) return;
 
         FGStageModel stage = (FGStageModel) model.getGameStage();
 
-        // Check for a victory
+        // Check victory before touching selections
         int whoWon = checkVictory(stage);
         if (whoWon != 0) {
             String winnerName;
@@ -71,27 +67,18 @@ public class FGController extends Controller {
             gameEndListener.updateCurrentPlayer(p.getName(), model.getIdPlayer() == 0);
         }
 
-        // Select the fox if it is its turn
+        // Unselect everything and select the fox synchronously, NOT in runLater.
+        // Doing this here, right after the ActionPlayer for this turn has finished
+        // (endOfTurn is called once the action sequence completes), avoids
+        // concurrent view updates with the still-running AnimationTimer.
+        for (GameElement e : model.getGameStage().getElements()) {
+            if (e.isSelected()) e.unselect();
+        }
         if (model.getIdPlayer() == 0) {
             stage.getFox()[0].select();
         }
-        // Différer les select/unselect sur le prochain pulse JavaFX
-        // pour ne pas interférer avec l'ActionPlayer encore en cours
-        Platform.runLater(() -> {
-            if (model.getGameStage() == null) return;
 
-            // Désélectionner tout
-            for (GameElement e : model.getGameStage().getElements()) {
-                if (e.isSelected()) e.unselect();
-            }
-
-            // Sélectionner le renard si c'est son tour
-            if (model.getIdPlayer() == 0) {
-                stage.getFox()[0].select();
-            }
-        });
-
-        // Launch the AI if necessary
+        // Start AI if needed
         if (p.getType() == Player.COMPUTER) {
             System.out.println("COMPUTER PLAYS");
             if (model.getIdPlayer() == 0) {
@@ -103,7 +90,6 @@ public class FGController extends Controller {
             }
         }
     }
-
     private int checkVictory(FGStageModel stage) {
         if (stage.getGeeseToPlay() < 4) return 1;
         Board board = stage.getBoard();

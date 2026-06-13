@@ -8,23 +8,15 @@ import model.Pawn;
 
 public class PawnLook extends ElementLook {
 
-    // Images normales
     private static final Image FOX_IMAGE   = new Image("resources/Fox.png");
     private static final Image GOOSE_IMAGE = new Image("resources/Geese.png");
 
-    // Images quand sélectionné
     private static final Image FOX_SELECTED_IMAGE   = new Image("resources/FoxSelect.png");
     private static final Image GOOSE_SELECTED_IMAGE = new Image("resources/GeeseSelect.png");
 
-    // CORRECTION : taille du pion agrandie pour suivre l'agrandissement
-    // du plateau (CELL_SIZE 68 -> 90 dans BoardLook). L'offset est recalculé
-    // pour rester centré dans la case : -(taille/2 + 0.5) comme avant
-    // (50 -> -15.5 correspondait à un centrage avec une marge de 9.5px
-    // de chaque côté pour une case de 68px, soit ~14% de la case).
-    private static final double PAWN_SIZE = 66; // ~14% de marge pour une case de 90px
-    private static final double OFFSET    = -(PAWN_SIZE / 2.0) + 0.5; // -32.5
+    private static final double PAWN_SIZE = 70;
+    private static final double OFFSET    = -(PAWN_SIZE / 2.0) + 10.5 ;
 
-    // Référence à l'ImageView pour pouvoir la modifier après render()
     private ImageView imageView;
     private boolean isFox;
 
@@ -32,6 +24,7 @@ public class PawnLook extends ElementLook {
         super(element);
     }
 
+    // Create and position the pawn image, centered in its cell.
     @Override
     protected void render() {
         Pawn pawn = (Pawn) element;
@@ -46,18 +39,20 @@ public class PawnLook extends ElementLook {
         addNode(imageView);
     }
 
+    // Switch the pawn image when it gets selected or deselected.
     @Override
     public void onSelectionChange() {
         if (imageView == null) return;
 
         if (element.isSelected()) {
-            // Pion sélectionné --> image alternative
             imageView.setImage(isFox ? FOX_SELECTED_IMAGE : GOOSE_SELECTED_IMAGE);
         } else {
-            // Pion désélectionné --> image normale
             imageView.setImage(isFox ? FOX_IMAGE : GOOSE_IMAGE);
         }
     }
 
-    public void onChange() { }
+    @Override
+    public void onFaceChange() {
+        // Pawns don't have a "face" (no flip side), nothing to update.
+    }
 }

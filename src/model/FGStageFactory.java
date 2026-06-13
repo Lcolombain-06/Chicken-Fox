@@ -6,11 +6,10 @@ import boardifier.model.TextElement;
 
 /**
  * Factory class responsible for creating and placing game elements on the board.
- * <p>
  * This class sets up the initial layout of the game: it initializes the current player's
  * name display, creates the grid board, sets up the 13 geese at their starting spots,
  * and places the fox at its initial position.
- * </p>
+
  */
 public class FGStageFactory extends StageElementsFactory {
 
@@ -23,10 +22,8 @@ public class FGStageFactory extends StageElementsFactory {
 
     /**
      * Sets up and positions all initial components inside the game area.
-     * <p>
      * Initializes the player name text label, creates the grid board, spawns the geese
      * in the bottom rows of the cross shape, and spawns the fox at coordinates [2,3].
-     * </p>
      */
     @Override
     public void setup() {

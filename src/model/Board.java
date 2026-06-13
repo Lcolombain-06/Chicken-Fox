@@ -27,10 +27,10 @@ public class Board extends ContainerElement {
     // and then, call the setValidCells of the type of pawn in function of which player turn it is
     /**
      * Calculates and highlights all valid destination cells for a given pawn.
-     * <p>
+
      * during the game loop, call to check all the possible move of the selected cell (fox or goose),
      * and then, call the setValidCells of the type of pawn in function of which player turn it is
-     * </p>
+     *
      * @param pawn The pawn component moving (Fox or Goose).
      * @param row  The starting row index.
      * @param col  The starting column index.

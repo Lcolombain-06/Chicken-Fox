@@ -24,6 +24,7 @@ public class MainApp extends Application implements GameEndListener {
     private FGRootPane rootPane;
     private Stage primaryStage;
 
+    // Build the UI, set up the scene, and wire the title screen buttons.
     @Override
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
@@ -31,8 +32,6 @@ public class MainApp extends Application implements GameEndListener {
         rootPane = new FGRootPane();
         rootPane.initPanes();
 
-        // Donner au rootPane la référence au stage pour qu'il puisse
-        // restaurer lui-même la taille au bon moment dans showTitleScreen()
         rootPane.setPrimaryStage(primaryStage, WIDTH, HEIGHT);
 
         Scene scene = new Scene(rootPane, WIDTH, HEIGHT);
@@ -44,17 +43,18 @@ public class MainApp extends Application implements GameEndListener {
         rootPane.getNewGameButton().setOnAction(e -> startGame());
 
         rootPane.setMenuCallbacks(
-                () -> {                          // ← quitter
+                () -> {
                     stopCurrentGame();
-                    rootPane.showTitleScreen();  // la restauration de taille est faite ici
+                    rootPane.showTitleScreen();
                 },
-                () -> {                          // ← recommencer
+                () -> {
                     stopCurrentGame();
                     startGame();
                 }
         );
     }
 
+    // Create a new model and players based on the title screen choices, then start the game.
     private void startGame() {
         try {
             model = new Model();
@@ -93,6 +93,7 @@ public class MainApp extends Application implements GameEndListener {
         }
     }
 
+    // Stop the running controller and clear the model, if any.
     private void stopCurrentGame() {
         if (controller != null) {
             controller.stopGame();
@@ -101,12 +102,10 @@ public class MainApp extends Application implements GameEndListener {
         model = null;
     }
 
+    // Show the end-of-game popup with styled "New Game" and "Quit" buttons.
     @Override
     public void showEndGame(String winnerName) {
         Platform.runLater(() -> {
-            // CORRECTION : arrêter le contrôleur/AnimationTimer AVANT d'afficher
-            // l'Alert, sinon le timer continue de tourner pendant showAndWait()
-            // et peut figer/empêcher les clics sur la popup.
             stopCurrentGame();
 
             Alert alert = new Alert(Alert.AlertType.NONE);
@@ -119,7 +118,6 @@ public class MainApp extends Application implements GameEndListener {
             ButtonType quit    = new ButtonType("Quit", ButtonType.CANCEL.getButtonData());
             alert.getButtonTypes().setAll(newGame, quit);
 
-            // ── Style de la popup : même vert que le plateau, boutons rose/vert ──
             DialogPane pane = alert.getDialogPane();
             pane.setStyle(
                     "-fx-background-color: #013039;" +
@@ -132,7 +130,6 @@ public class MainApp extends Application implements GameEndListener {
             pane.lookup(".content.label").setStyle(
                     "-fx-text-fill: white; -fx-font-family: 'Courier New'; -fx-font-size: 14px;"
             );
-            // Le header-panel contient un Label pour le headerText
             pane.lookup(".header-panel .label").setStyle(
                     "-fx-text-fill: #e94560; -fx-font-family: 'Courier New';" +
                             "-fx-font-weight: bold; -fx-font-size: 20px;"
@@ -162,6 +159,7 @@ public class MainApp extends Application implements GameEndListener {
         });
     }
 
+    // Update the current player label on the UI thread.
     @Override
     public void updateCurrentPlayer(String name, boolean isFox) {
         Platform.runLater(() -> rootPane.setCurrentPlayer(name, isFox));

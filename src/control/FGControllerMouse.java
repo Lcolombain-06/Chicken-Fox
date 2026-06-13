@@ -24,7 +24,7 @@ public class FGControllerMouse extends ControllerMouse {
     // Queue of planned moves for the fox (right-click)
     private final List<int[]> foxMoveQueue = new ArrayList<>();
 
-    // Two-step click state for geese
+    // Currently selected goose pawn (two-click selection flow)
     private Pawn selectedPawn = null;
 
     public FGControllerMouse(Model model, View view, Controller control) {
@@ -33,12 +33,13 @@ public class FGControllerMouse extends ControllerMouse {
 
     @Override
     public void handle(MouseEvent event) {
+        // Game stopped (quit or restart in progress): ignore input
         if (model.getGameStage() == null) return;
 
         FGStageModel stage = (FGStageModel) model.getGameStage();
         Board board = stage.getBoard();
 
-        // Get the actual position of the BoardLook in the scene
+        // Get the real position of the board look in the scene
         ElementLook boardLook = control.getElementLook(board);
         if (boardLook == null) return;
 
@@ -74,11 +75,11 @@ public class FGControllerMouse extends ControllerMouse {
     }
 
     /**
-     * Right-click: adds a cell to the fox's move queue.
+     * Right click: add a target cell to the fox's planned move queue.
      */
     private void handleFoxPlan(FGStageModel stage, Board board, int row, int col) {
         foxMoveQueue.add(new int[]{row, col});
-        System.out.println("Cell added to queue: [" + row + "," + col + "] — queue: " + foxMoveQueue.size() + " move(s)");
+        System.out.println("Cell added to queue: [" + row + "," + col + "] - queue: " + foxMoveQueue.size() + " move(s)");
     }
 
     /**
@@ -86,7 +87,7 @@ public class FGControllerMouse extends ControllerMouse {
      */
     private void handleFoxConfirm(FGStageModel stage, Board board) {
         if (foxMoveQueue.isEmpty()) {
-            System.out.println("No move planned. Use right-click to plan moves.");
+            System.out.println("No move planned. Right-click to plan a move.");
             return;
         }
 
@@ -94,7 +95,10 @@ public class FGControllerMouse extends ControllerMouse {
         int currentRow = stage.getFoxRow();
         int currentCol = stage.getFoxCol();
 
-        // Validate and execute each move in the queue
+        // All actions for the whole sequence (single capture or capture chain)
+        ActionList allActions = new ActionList();
+        boolean anyMove = false;
+
         for (int i = 0; i < foxMoveQueue.size(); i++) {
             int[] move = foxMoveQueue.get(i);
             int toRow = move[0];
@@ -104,31 +108,30 @@ public class FGControllerMouse extends ControllerMouse {
             board.setValidCells(fox, currentRow, currentCol);
 
             if (!board.getReachableCells()[toRow][toCol]) {
-                // Invalid move → cancel the whole sequence
-                System.out.println("Invalid move to [" + toRow + "," + toCol + "] — sequence cancelled.");
-                System.out.println("Coup invalide en [" + toRow + "," + toCol + "] — séquence annulée.");
+                System.out.println("Invalid move to [" + toRow + "," + toCol + "] - sequence cancelled.");
                 foxMoveQueue.clear();
                 board.clearValidCells();
-                return;
-            }
-
-            boolean isCapture = Math.abs(toRow - currentRow) == 2 || Math.abs(toCol - currentCol) == 2;
-
-            // If this is not the first move and it is not a capture → stop
-            if (i > 0 && !isCapture) {
-                System.out.println("Non-capture move after a capture to [" + toRow + "," + toCol + "] — sequence stopped.");
+                // If nothing was queued yet, abort completely; otherwise keep what we have
+                if (!anyMove) return;
                 break;
             }
 
-            // Build and execute the action
-            ActionList actions = new ActionList();
+            // A jump of 2 cells (row or column) is a capture move!
+            boolean isCapture = Math.abs(toRow - currentRow) == 2 || Math.abs(toCol - currentCol) == 2;
+
+            // After a capture, only another capture is allowed (multi-capture rule)
+            if (i > 0 && !isCapture) {
+                System.out.println("Non-capture move after a capture at [" + toRow + "," + toCol + "] - sequence stopped.");
+                break;
+            }
 
             if (isCapture) {
+                // Remove the goose that gets jumped over
                 GameElement geeseToEat = board.getFirstElement(
                         (currentRow + toRow) / 2,
                         (currentCol + toCol) / 2);
                 if (geeseToEat != null) {
-                    actions.addAll(ActionFactory.generateRemoveFromStage(model, geeseToEat));
+                    allActions.addAll(ActionFactory.generateRemoveFromStage(model, geeseToEat));
                     stage.eatGeese();
                 }
                 stage.setFoxCaptured(true);
@@ -136,30 +139,36 @@ public class FGControllerMouse extends ControllerMouse {
                 stage.setFoxCaptured(false);
             }
 
-            actions.addAll(ActionFactory.generateMoveWithinContainer(control, model, fox, toRow, toCol));
+            // Add the fox movement t o the same action list
+            allActions.addAll(ActionFactory.generateMoveWithinContainer(control, model, fox, toRow, toCol));
             stage.setFoxCoo(toRow, toCol);
+            anyMove = true;
 
-            // Last move in the list → end of turn
-            boolean isLastMove = (i == foxMoveQueue.size() - 1);
-            actions.setDoEndOfTurn(isLastMove);
+            System.out.println("Move executed: [" + currentRow + "," + currentCol + "] -> [" + toRow + "," + toCol + "]");
 
-            new ActionPlayer(model, control, actions).start();
-            System.out.println("Move executed: [" + currentRow + "," + currentCol + "] → [" + toRow + "," + toCol + "]");
-
-            // Update current position for the next move
             currentRow = toRow;
             currentCol = toCol;
 
-            // If this is not a capture, stop after this move
+            // Stop the chain after a non-capture move (only one move allowed per turn)
             if (!isCapture) break;
+        }
+
+        if (anyMove) {
+            // End the turn only once, after the whole sequence has been built
+            allActions.setDoEndOfTurn(true);
+            new ActionPlayer(model, control, allActions).start();
         }
 
         foxMoveQueue.clear();
         board.clearValidCells();
     }
 
+    /**
+     * Left click for the geese: select a goose, then click a destination cell to move it.
+     */
     private void handleGooseTurn(FGStageModel stage, Board board, int row, int col) {
         if (selectedPawn == null) {
+            // First click: select a goose
             GameElement e = board.getElement(row, col);
             if (e == null || !(e instanceof Pawn) || !((Pawn) e).isGoose()) {
                 System.out.println("No goose here.");
@@ -172,9 +181,11 @@ public class FGControllerMouse extends ControllerMouse {
             System.out.println("Goose selected at [" + pos[0] + "," + pos[1] + "]");
 
         } else {
+            // Second click: move the selected goose or deselect it
             int[] pos = board.getElementCell(selectedPawn);
 
             if (row == pos[0] && col == pos[1]) {
+                // Clicked the same cell againnn: deselect
                 selectedPawn.unselect();
                 selectedPawn = null;
                 board.clearValidCells();
@@ -185,7 +196,7 @@ public class FGControllerMouse extends ControllerMouse {
             board.setValidCells(selectedPawn, pos[0], pos[1]);
 
             if (!board.getReachableCells()[row][col]) {
-                System.out.println("Cell not reachable for this goose.");
+                System.out.println("Unreachable cell for this goose.");
                 selectedPawn.unselect();
                 selectedPawn = null;
                 board.clearValidCells();
@@ -202,8 +213,8 @@ public class FGControllerMouse extends ControllerMouse {
     }
 
     /**
-     * Appelé par FGController.stopGame() pour nettoyer l'état interne
-     * avant que le handler soit potentiellement encore déclenché.
+     * Called by FGController.stopGame() to clear internal state
+     * before the handler could possibly still be triggered.
      */
     public void reset() {
         foxMoveQueue.clear();

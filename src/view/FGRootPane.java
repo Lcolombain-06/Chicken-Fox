@@ -21,7 +21,6 @@ import javafx.util.Duration;
 
 public class FGRootPane extends RootPane {
 
-    // --- Title screen ---
     private VBox titlePane;
     private TextField player1NameField;
     private TextField player2NameField;
@@ -35,39 +34,30 @@ public class FGRootPane extends RootPane {
     private Button newGameButton;
     private StackPane boardContainer;
 
-    // --- Game screen ---
     private BorderPane gamePane;
     private Label currentPlayerLabel;
     private Button backToTitleButton;
     private Button restartButton;
 
-    // Callbacks
     private Runnable onQuitGame;
     private Runnable onRestartGame;
 
-    // Taille de référence du menu titre
     private Stage primaryStage;
     private double titleWidth;
     private double titleHeight;
 
-    // Indique si on est sur l'écran titre (pour le listener de resize)
     private boolean onTitleScreen = false;
 
     public FGRootPane() {
         super();
     }
 
-    /**
-     * À appeler depuis MainApp.start() après primaryStage.show().
-     * Installe un listener sur le Stage qui corrige la taille si boardifier
-     * la modifie alors qu'on est sur l'écran titre.
-     */
+    // Store the stage reference and lock the window size while on the title screen.
     public void setPrimaryStage(Stage stage, double width, double height) {
         this.primaryStage = stage;
         this.titleWidth   = width;
         this.titleHeight  = height;
 
-        // Forcer aussi la prefSize de la root scene dès maintenant
         Platform.runLater(() -> {
             if (stage.getScene() != null) {
                 stage.getScene().getRoot().prefWidth(width);
@@ -75,8 +65,6 @@ public class FGRootPane extends RootPane {
             }
         });
 
-        // Listener sur la largeur : si boardifier redimensionne pendant
-        // qu'on est sur l'écran titre, on remet immédiatement la bonne taille
         stage.widthProperty().addListener((obs, oldW, newW) -> {
             if (onTitleScreen && Math.abs(newW.doubleValue() - titleWidth) > 1.0) {
                 Platform.runLater(() -> {
@@ -95,10 +83,6 @@ public class FGRootPane extends RootPane {
             }
         });
 
-        // Verrou global : quelle que soit la phase (titre ou jeu), la fenêtre
-        // ne doit jamais dépasser la taille de référence définie par MainApp.
-        // Cela empêche boardifier d'agrandir le Stage si un GameStageView
-        // déclare des dimensions plus grandes que la fenêtre.
         stage.widthProperty().addListener((obs, oldW, newW) -> {
             if (newW.doubleValue() > titleWidth + 1.0) {
                 Platform.runLater(() -> stage.setWidth(titleWidth));
@@ -111,11 +95,12 @@ public class FGRootPane extends RootPane {
         });
     }
 
+    // Required by RootPane, the board group is attached later in init().
     @Override
     protected void createDefaultGroup() {
-        // group sera attaché à boardContainer dans init()
     }
 
+    // Initialize the view, attach the board group, and wire up the menu buttons.
     @Override
     public void init(GameStageView gameStageView) {
         super.init(gameStageView);
@@ -128,6 +113,7 @@ public class FGRootPane extends RootPane {
             restartButton.setOnAction(e -> onRestartGame.run());
     }
 
+    // Build both screens (title and game) and bind their sizes to the root pane.
     public void initPanes() {
         setStyle("-fx-background-color: #1a1a2e;");
 
@@ -147,9 +133,7 @@ public class FGRootPane extends RootPane {
         showTitleScreen();
     }
 
-    // =============================================
-    //  IMAGE BUTTON WITH HOVER EFFECTS
-    // =============================================
+    // Create a clickable image button with hover and press scale effects.
     private StackPane createImageButton(String imagePath, int width, int height, Runnable onClick) {
         StackPane wrapper = new StackPane();
         try {
@@ -173,9 +157,7 @@ public class FGRootPane extends RootPane {
         return wrapper;
     }
 
-    // =============================================
-    //  STYLED TOGGLE BUTTON
-    // =============================================
+    // Create a text toggle button with a highlighted style when selected.
     private ToggleButton createCuteToggle(String text) {
         ToggleButton btn = new ToggleButton(text);
         btn.setPrefSize(90, 60);
@@ -192,9 +174,7 @@ public class FGRootPane extends RootPane {
         return btn;
     }
 
-    // =============================================
-    //  IMAGE TOGGLE BUTTON
-    // =============================================
+    // Create an icon toggle button with a highlighted style when selected.
     private ToggleButton createImageToggle(String imagePath) {
         ToggleButton btn = new ToggleButton();
         ImageView icon = new ImageView(new Image(imagePath));
@@ -214,9 +194,7 @@ public class FGRootPane extends RootPane {
         return btn;
     }
 
-    // =============================================
-    //  TITLE SCREEN
-    // =============================================
+    // Build the title screen: background, animated title, player setup cards, and start button.
     private void createTitlePane() {
         titlePane = new VBox(20);
         titlePane.setAlignment(Pos.CENTER);
@@ -250,7 +228,6 @@ public class FGRootPane extends RootPane {
         floatAnim.setCycleCount(Timeline.INDEFINITE);
         floatAnim.play();
 
-
         VBox formCard = new VBox(15);
         formCard.setAlignment(Pos.CENTER);
         formCard.setMaxWidth(520);
@@ -272,7 +249,7 @@ public class FGRootPane extends RootPane {
         player1NameField.setPrefWidth(200); player1NameField.setStyle(fieldStyle);
         player2NameField.setPrefWidth(200); player2NameField.setStyle(fieldStyle);
 
-        // FOX card
+        // Fox card: icon, label, human/bot toggle, and name field.
         ImageView foxImg = new ImageView(new Image("resources/Fox.png"));
         foxImg.setFitWidth(72); foxImg.setFitHeight(72);
         Label foxTitle2 = new Label("FOX");
@@ -293,7 +270,7 @@ public class FGRootPane extends RootPane {
         foxCard.setStyle("-fx-background-color: rgba(66,71,105,0.7);-fx-background-radius: 14;" +
                 "-fx-border-radius: 14;-fx-border-color: #F6B17A;-fx-border-width: 2;");
 
-        // GEESE card
+        // Geese card: icon, label, human/bot toggle, and name field.
         ImageView geeseImg = new ImageView(new Image("resources/Geese.png"));
         geeseImg.setFitWidth(72); geeseImg.setFitHeight(72);
         Label geeseTitle2 = new Label("GEESE");
@@ -346,9 +323,7 @@ public class FGRootPane extends RootPane {
         titlePane.getChildren().addAll(title, formCard, btnBox, newGameButton);
     }
 
-    // =============================================
-    //  GAME SCREEN
-    // =============================================
+    // Build the game screen: top menu bar, board container, and bottom status label.
     private void createGamePane() {
         gamePane = new BorderPane();
         gamePane.setStyle("-fx-background-color: #013039;");
@@ -399,14 +374,10 @@ public class FGRootPane extends RootPane {
         gamePane.setCenter(boardContainer);
     }
 
-    // =============================================
-    //  NAVIGATION
-    // =============================================
+    // Show the title screen and lock the window to its reference size.
     public void showTitleScreen() {
-        // Activer le verrou de taille AVANT d'afficher le panneau
         onTitleScreen = true;
 
-        // Restaurer immédiatement
         if (primaryStage != null) {
             primaryStage.setWidth(titleWidth);
             primaryStage.setHeight(titleHeight);
@@ -415,7 +386,6 @@ public class FGRootPane extends RootPane {
         titlePane.setVisible(true);  titlePane.setManaged(true);
         gamePane.setVisible(false);  gamePane.setManaged(false);
 
-        // Double sécurité : si boardifier redimensionne en retard, on corrige
         Platform.runLater(() -> {
             if (primaryStage != null) {
                 primaryStage.setWidth(titleWidth);
@@ -424,19 +394,21 @@ public class FGRootPane extends RootPane {
         });
     }
 
+    // Show the game screen and release the title screen size lock.
     public void showGameScreen() {
-        // Désactiver le verrou : boardifier peut redimensionner librement en jeu
         onTitleScreen = false;
 
         titlePane.setVisible(false); titlePane.setManaged(false);
         gamePane.setVisible(true);   gamePane.setManaged(true);
     }
 
+    // Update the bottom label to show whose turn it is.
     public void setCurrentPlayer(String name, boolean isFox) {
         currentPlayerLabel.setText((isFox ? "Fox" : "Geese") + " — " + name + "'s turn");
         currentPlayerLabel.setTextFill(isFox ? Color.web("#f5a623") : Color.web("#4a90d9"));
     }
 
+    // Wire the quit and restart buttons to the given callbacks.
     public void setMenuCallbacks(Runnable onQuit, Runnable onRestart) {
         this.onQuitGame    = onQuit;
         this.onRestartGame = onRestart;
@@ -444,9 +416,6 @@ public class FGRootPane extends RootPane {
         if (restartButton     != null && onRestart != null) restartButton.setOnAction(e -> onRestart.run());
     }
 
-    // =============================================
-    //  GETTERS
-    // =============================================
     public Button     getNewGameButton()     { return newGameButton; }
     public Button     getBackToTitleButton() { return backToTitleButton; }
     public Button     getRestartButton()     { return restartButton; }
