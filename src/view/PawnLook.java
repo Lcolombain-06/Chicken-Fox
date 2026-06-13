@@ -15,7 +15,7 @@ public class PawnLook extends ElementLook {
     private static final Image GOOSE_SELECTED_IMAGE = new Image("resources/GeeseSelect.png");
 
     private static final double PAWN_SIZE = 70;
-    private static final double OFFSET    = -(PAWN_SIZE / 2.0) + 10.5 ;
+    private static final double OFFSET    = -(PAWN_SIZE / 2.0) + 5.5 ;
 
     private ImageView imageView;
     private boolean isFox;
