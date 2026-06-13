@@ -13,6 +13,7 @@ import model.Pawn;
 
 public class FGController extends Controller {
 
+    // Interface instead of MainApp directly → no package dependency issue
     private GameEndListener gameEndListener;
     private FGControllerMouse mouseController;
 
@@ -36,11 +37,15 @@ public class FGController extends Controller {
 
     @Override
     public void endOfTurn() {
+        // Deselect everything
+        for (GameElement e : model.getGameStage().getElements()) {
+            if (e.isSelected()) e.unselect();
+        }
         if (model.getGameStage() == null) return;
 
         FGStageModel stage = (FGStageModel) model.getGameStage();
 
-        // Vérifier la victoire AVANT de toucher aux sélections
+        // Check for a victory
         int whoWon = checkVictory(stage);
         if (whoWon != 0) {
             String winnerName;
@@ -56,15 +61,20 @@ public class FGController extends Controller {
             return;
         }
 
-        // Changer de joueur
+        // Switch player
         model.setNextPlayer();
         Player p = model.getCurrentPlayer();
         stage.getPlayerName().setText(p.getName());
 
+        // Update the label via the interface
         if (gameEndListener != null) {
             gameEndListener.updateCurrentPlayer(p.getName(), model.getIdPlayer() == 0);
         }
 
+        // Select the fox if it is its turn
+        if (model.getIdPlayer() == 0) {
+            stage.getFox()[0].select();
+        }
         // Différer les select/unselect sur le prochain pulse JavaFX
         // pour ne pas interférer avec l'ActionPlayer encore en cours
         Platform.runLater(() -> {
@@ -81,7 +91,7 @@ public class FGController extends Controller {
             }
         });
 
-        // Lancer l'IA si nécessaire
+        // Launch the AI if necessary
         if (p.getType() == Player.COMPUTER) {
             System.out.println("COMPUTER PLAYS");
             if (model.getIdPlayer() == 0) {

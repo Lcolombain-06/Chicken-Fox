@@ -14,10 +14,9 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * AI Decision Engine for the Fox team
- *     This class uses a score evaluation to analyze and select the mathematically
- *     optimal tactical move based on the board constraints at this point in the game.
- *
+ * AI Decision Engine for the Fox team.
+ * This class uses a score evaluation to analyze and select the mathematically
+ * optimal tactical move based on the board constraints at this point in the game.
  */
 public class FoxDecider extends Decider {
 
@@ -31,7 +30,7 @@ public class FoxDecider extends Decider {
     }
 
     /**
-     * Checks all legal moves for the fox and finds the best one
+     * Checks all legal moves for the fox and finds the best one.
      *
      * @return an integer array with the best target coordinates [row, col]
      */
@@ -57,7 +56,7 @@ public class FoxDecider extends Decider {
             }
         }
 
-        // security
+        // Security: no valid move available
         if (validMoves.isEmpty()) {
             return new int[]{foxRow, foxCol};
         }
@@ -81,7 +80,7 @@ public class FoxDecider extends Decider {
         board.setValidCells(fox, foxRow, foxCol);
         board.resetReachableCells(false);
 
-        // Choose a cell if the list is empty
+        // Choose randomly among equally-scored best moves
         if (bestMoves.isEmpty()) {
             return validMoves.get(loto.nextInt(validMoves.size()));
         }
@@ -96,7 +95,7 @@ public class FoxDecider extends Decider {
     }
 
     /**
-     * Calculates a score for a specific fox move
+     * Calculates a score for a specific fox move.
      * <p>
      * The score is based on 5 tactical rules:
      * 1. Capturing (absolute priority to jumping over geese)
@@ -119,27 +118,25 @@ public class FoxDecider extends Decider {
             if (canCapture) score += 1000; // Extra massive bonus for another capture possible after this one
         }
 
-        // --- RULE 2: Move in direction of the center for better angles
-        int distCentreOrigine = Math.abs(fromR - 3) + Math.abs(fromC - 3);
-        int distCentreDestination = Math.abs(toR - 3) + Math.abs(toC - 3);
+        // --- RULE 2: Move toward the center for better angles
+        int distCentreOrigine      = Math.abs(fromR - 3) + Math.abs(fromC - 3);
+        int distCentreDestination  = Math.abs(toR   - 3) + Math.abs(toC   - 3);
 
         if (distCentreDestination < distCentreOrigine) {
             score += 15; // Bonus for controlling central cells
         }
 
-        // --- RULE 3: Bonus for infiltration down the geese
+        // --- RULE 3: Bonus for infiltrating down into the geese
         if (toR > fromR) {
             score += 5;
         }
 
-        // evaluate position
-        if (toR <= 4){
+        // Evaluate vertical position
+        if (toR <= 4) {
             score += toR * 10;
-        }
-        else {
+        } else {
             score -= toR * 10;
         }
-
 
         // --- RULE 4: Hunt isolated geese
         Cell destCell = board.getCell(toC, toR);
@@ -156,36 +153,30 @@ public class FoxDecider extends Decider {
                         gooseNeighborCount++;
                     }
                 }
-
-                // If the goose has 1 or 0 neighbors, it is alone and weak
+                // If the goose has 1 or 0 goose neighbors, it is isolated and weak
                 if (gooseNeighborCount <= 1) {
-                    score += 50; // bonus to attack this isolated goose
-
+                    score += 50; // Bonus for attacking this isolated goose
                 }
             }
-
         }
 
-        // --- RULE 5: prevent infinite games (try to)
+        // --- RULE 5: Prevent infinite games (anti-loop penalty)
         if (toR == lastRow && toC == lastCol) {
-
             if (score < 1000) {
-                score -= 800; // Big penalty to stop the fox from doing useless back-and-forth moves
+                score -= 800; // Big penalty to stop pointless back-and-forth moves
             }
         }
 
-        // Add some random noise to break perfect equalities and help the choice
+        // Add some random noise to break perfect ties
         score += loto.nextInt(100);
 
         return score;
-
     }
 
-
     /**
-     * Executes the move chosen by the AI during the fox's turn
+     * Executes the move chosen by the AI during the fox's turn.
      *
-     * It updates the loop memory, handles removing a goose if it was captured,
+     * Updates the loop memory, handles removing a goose if it was captured,
      * and sends the movement to Boardifier.
      *
      * @return The finalized ActionList sequence for this turn
@@ -230,4 +221,3 @@ public class FoxDecider extends Decider {
         return actions;
     }
 }
-
